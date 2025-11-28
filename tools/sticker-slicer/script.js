@@ -1,134 +1,316 @@
-// 获取 DOM 元素
-const imageInput = document.getElementById('imageInput');
-const fileNameDisplay = document.getElementById('fileName');
-const rowsInput = document.getElementById('rowsInput');
-const colsInput = document.getElementById('colsInput');
-const processBtn = document.getElementById('processBtn');
-const downloadBtn = document.getElementById('downloadBtn');
-const previewContainer = document.getElementById('previewContainer');
-const statusMessage = document.getElementById('statusMessage');
+document.addEventListener('DOMContentLoaded', () => {
+    // --- DOM 元素 ---
+    const imageInput = document.getElementById('imageInput');
+    const editorContainer = document.getElementById('editorContainer');
+    const downloadZipBtn = document.getElementById('downloadZipBtn');
 
-let loadedImage = null;
-let croppedImagesData = []; // 存储裁切后的图片Base64数据
+    // 控件
+    const rowsInput = document.getElementById('rowsInput');
+    const colsInput = document.getElementById('colsInput');
+    const rowsVal = document.getElementById('rowsVal');
+    const colsVal = document.getElementById('colsVal');
+    const gridColorInput = document.getElementById('gridColor');
+    const gridWidthInput = document.getElementById('gridWidth');
+    const presetBtns = document.querySelectorAll('.preset-btn');
 
-// 监听文件选择
-imageInput.addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        fileNameDisplay.textContent = file.name;
-        statusMessage.textContent = "正在加载图片...";
+    // 导出
+    const prefixInput = document.getElementById('prefixInput');
+    const formatSelect = document.getElementById('formatSelect');
+    const qualityInput = document.getElementById('qualityInput');
+    const qualityVal = document.getElementById('qualityVal');
 
+    // 模态框
+    const modal = document.getElementById('singlePreviewModal');
+    const singlePreviewImg = document.getElementById('singlePreviewImg');
+    const singleDownloadBtn = document.getElementById('singleDownloadBtn');
+    const toggleDisableBtn = document.getElementById('toggleDisableBtn');
+    const modalHintText = document.getElementById('modalHintText');
+    const singlePreviewIndexSpan = document.getElementById('singlePreviewIndex');
+    const closeModalElements = document.querySelectorAll('.close-modal, .close-modal-btn');
+
+    // --- 状态 ---
+    let loadedImage = null;
+    let disabledCells = new Set();
+    let currentPreviewIndex = -1;
+
+    // --- 初始化 ---
+    initEmptyState();
+
+    // --- 事件监听 ---
+    const closeModal = () => modal.classList.add('hidden');
+    closeModalElements.forEach(el => el.onclick = closeModal);
+    modal.onclick = (e) => {
+        if (e.target === modal) closeModal();
+    };
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+    });
+
+    // 模态框内部操作
+    singleDownloadBtn.onclick = downloadSingleImage;
+    toggleDisableBtn.onclick = toggleDisableFromModal;
+
+    // 上传
+    document.getElementById('dropZone').addEventListener('click', () => imageInput.click());
+    imageInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+    const workspace = document.querySelector('.workspace-container');
+    workspace.addEventListener('dragover', (e) => e.preventDefault());
+    workspace.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+
+    // 设置更新
+    function setupInput(input, display) {
+        input.addEventListener('input', (e) => {
+            if (display) display.textContent = e.target.value;
+            updateGrid();
+        });
+    }
+
+    setupInput(rowsInput, rowsVal);
+    setupInput(colsInput, colsVal);
+    gridColorInput.addEventListener('input', updateGridStyle);
+    gridWidthInput.addEventListener('input', (e) => {
+        document.getElementById('gridWidthVal').textContent = e.target.value + 'px';
+        updateGridStyle();
+    });
+    qualityInput.addEventListener('input', (e) => qualityVal.textContent = e.target.value + '%');
+
+    presetBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            presetBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            rowsInput.value = btn.dataset.r;
+            colsInput.value = btn.dataset.c;
+            rowsVal.textContent = btn.dataset.r;
+            colsVal.textContent = btn.dataset.c;
+            updateGrid();
+        });
+    });
+
+    downloadZipBtn.addEventListener('click', exportZip);
+
+    // --- 核心函数 ---
+
+    function initEmptyState() {
+        editorContainer.className = 'editor-container';
+        editorContainer.innerHTML = `
+            <div class="empty-placeholder" onclick="document.getElementById('imageInput').click()">
+                <div class="icon">🖼️</div>
+                <h3>请先上传图片</h3>
+                <p>点击这里或将图片拖拽至此</p>
+            </div>
+        `;
+        downloadZipBtn.disabled = true;
+    }
+
+    function handleFile(file) {
+        if (!file || !file.type.startsWith('image/')) return;
         const reader = new FileReader();
-        reader.onload = function(event) {
+        reader.onload = (e) => {
             loadedImage = new Image();
-            loadedImage.onload = function() {
-                statusMessage.textContent = `图片加载成功! 尺寸: ${loadedImage.naturalWidth}x${loadedImage.naturalHeight}`;
-                processBtn.disabled = false;
-                downloadBtn.disabled = true;
-                previewContainer.innerHTML = ''; // 清空预览
-                previewContainer.classList.add('hidden');
+            loadedImage.onload = () => {
+                disabledCells.clear();
+                renderMainCanvas();
+                updateGrid();
+                document.getElementById('fileNameDisplay').textContent = file.name;
+                document.getElementById('fileSizeDisplay').textContent = `${loadedImage.naturalWidth}x${loadedImage.naturalHeight}`;
+                document.getElementById('fileInfo').classList.remove('hidden');
+                downloadZipBtn.disabled = false;
             };
-            loadedImage.onerror = function() {
-                 statusMessage.textContent = "错误：无法加载图片，请检查文件格式。";
-            }
-            loadedImage.src = event.target.result;
+            loadedImage.src = e.target.result;
         };
         reader.readAsDataURL(file);
-    } else {
-        fileNameDisplay.textContent = "未选择文件";
-        processBtn.disabled = true;
     }
-});
 
-// 监听裁切按钮点击
-processBtn.addEventListener('click', function() {
-    if (!loadedImage) return;
+    function renderMainCanvas() {
+        editorContainer.innerHTML = '';
+        editorContainer.classList.add('has-image');
+        const img = loadedImage.cloneNode();
+        img.className = 'editor-img';
+        editorContainer.appendChild(img);
+        const gridOverlay = document.createElement('div');
+        gridOverlay.className = 'grid-overlay';
+        gridOverlay.id = 'gridOverlay';
+        editorContainer.appendChild(gridOverlay);
+    }
 
-    statusMessage.textContent = "正在处理裁切...";
-    previewContainer.innerHTML = '';
-    croppedImagesData = [];
+    // 更新主网格 (现在的点击事件改为打开模态框)
+    function updateGrid() {
+        if (!loadedImage) return;
+        const rows = parseInt(rowsInput.value);
+        const cols = parseInt(colsInput.value);
+        const gridOverlay = document.getElementById('gridOverlay');
 
-    const rows = parseInt(rowsInput.value) || 4;
-    const cols = parseInt(colsInput.value) || 6;
+        gridOverlay.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+        gridOverlay.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        gridOverlay.innerHTML = '';
 
-    const imgWidth = loadedImage.naturalWidth;
-    const imgHeight = loadedImage.naturalHeight;
+        const totalCells = rows * cols;
+        for (let i = 0; i < totalCells; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.id = `cell-${i}`; // 给每个格子一个ID方便查找
 
-    // 计算每个单元格的宽度和高度 (使用浮点数以提高精度)
-    const cellWidth = imgWidth / cols;
-    const cellHeight = imgHeight / rows;
+            if (disabledCells.has(i)) cell.classList.add('disabled');
 
-    // 创建一个离屏 Canvas 用于裁切操作
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = cellWidth;
-    canvas.height = cellHeight;
+            cell.title = "点击查看详情/禁用";
 
-    let count = 0;
-    for (let i = 0; i < rows; i++) {
-        for (let j = 0; j < cols; j++) {
-            // 清除画布
-            ctx.clearRect(0, 0, cellWidth, cellHeight);
+            // 关键：点击不再直接禁用，而是打开预览页
+            cell.onclick = () => openSinglePreview(i);
 
-            // 计算源图像的裁切坐标
-            // 使用 Math.floor 确保源坐标是整数，避免抗锯齿导致的边缘模糊
-            const sourceX = Math.floor(j * cellWidth);
-            const sourceY = Math.floor(i * cellHeight);
+            gridOverlay.appendChild(cell);
+        }
+        updateGridStyle();
+    }
 
-            // 核心裁切代码：drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh)
-            // 注意：这里我们使用计算出的浮点数 cellWidth/Height 作为源和目标的宽高，
-            // 浏览器会自动处理非整数像素的插值。
-            ctx.drawImage(
-                loadedImage,
-                sourceX, sourceY, cellWidth, cellHeight, // 源区域
-                0, 0, cellWidth, cellHeight              // 目标画布区域
-            );
+    function updateGridStyle() {
+        const color = gridColorInput.value;
+        const width = gridWidthInput.value + 'px';
+        document.querySelectorAll('.grid-cell').forEach(cell => {
+            cell.style.borderColor = color;
+            cell.style.borderWidth = width;
+        });
+    }
 
-            // 将 canvas 内容转换为 Base64 data URL
-            const dataUrl = canvas.toDataURL('image/png');
-            croppedImagesData.push({
-                name: `sticker_${String(count + 1).padStart(2, '0')}.png`,
-                data: dataUrl
-            });
+    // --- 打开详情模态框 ---
+    function openSinglePreview(index) {
+        if (!loadedImage) return;
+        currentPreviewIndex = index;
+        singlePreviewIndexSpan.textContent = index + 1;
 
-            // 创建预览图像并添加到页面
-            const imgElement = document.createElement('img');
-            imgElement.src = dataUrl;
-            imgElement.className = 'preview-item';
-            previewContainer.appendChild(imgElement);
+        // 计算裁切区域
+        const rows = parseInt(rowsInput.value);
+        const cols = parseInt(colsInput.value);
+        const cellW = loadedImage.naturalWidth / cols;
+        const cellH = loadedImage.naturalHeight / rows;
+        const rowIndex = Math.floor(index / cols);
+        const colIndex = index % cols;
+        const srcX = colIndex * cellW;
+        const srcY = rowIndex * cellH;
 
-            count++;
+        // 生成高清预览图
+        const canvas = document.createElement('canvas');
+        canvas.width = cellW;
+        canvas.height = cellH;
+        const ctx = canvas.getContext('2d');
+
+        const format = formatSelect.value;
+        if (format === 'jpeg') {
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, cellW, cellH);
+        }
+        ctx.drawImage(loadedImage, srcX, srcY, cellW, cellH, 0, 0, cellW, cellH);
+        singlePreviewImg.src = canvas.toDataURL(`image/${format === 'jpeg' ? 'jpeg' : 'png'}`);
+
+        // 更新按钮状态
+        updateModalButtonsState();
+
+        modal.classList.remove('hidden');
+    }
+
+    // 更新模态框内的按钮和文字状态
+    function updateModalButtonsState() {
+        if (disabledCells.has(currentPreviewIndex)) {
+            // 当前已禁用
+            toggleDisableBtn.textContent = "✅ 启用此图";
+            toggleDisableBtn.classList.remove('danger');
+            toggleDisableBtn.classList.add('primary'); // 或者其他颜色
+            modalHintText.textContent = "状态: 已禁用 (不会导出)";
+            modalHintText.style.color = "#ff4d4f";
+            singlePreviewImg.style.opacity = "0.5";
+            singleDownloadBtn.disabled = true;
+        } else {
+            // 当前正常
+            toggleDisableBtn.textContent = "🚫 禁用此图";
+            toggleDisableBtn.classList.add('danger');
+            toggleDisableBtn.classList.remove('primary');
+            modalHintText.textContent = "状态: 正常导出";
+            modalHintText.style.color = "var(--text-secondary)";
+            singlePreviewImg.style.opacity = "1";
+            singleDownloadBtn.disabled = false;
         }
     }
 
-    previewContainer.classList.remove('hidden');
-    downloadBtn.disabled = false;
-    statusMessage.textContent = `成功裁切出 ${count} 张图片！请检查预览，然后点击下载 ZIP。`;
-});
+    // 在模态框中点击禁用/启用
+    function toggleDisableFromModal() {
+        if (currentPreviewIndex === -1) return;
 
+        const cell = document.getElementById(`cell-${currentPreviewIndex}`);
 
-// 监听下载 ZIP 按钮点击
-downloadBtn.addEventListener('click', function() {
-    if (croppedImagesData.length === 0) return;
+        if (disabledCells.has(currentPreviewIndex)) {
+            disabledCells.delete(currentPreviewIndex);
+            if (cell) cell.classList.remove('disabled');
+        } else {
+            disabledCells.add(currentPreviewIndex);
+            if (cell) cell.classList.add('disabled');
+        }
 
-    statusMessage.textContent = "正在打包 ZIP...";
+        // 立即刷新模态框里的按钮状态
+        updateModalButtonsState();
+    }
 
-    // 创建一个新的 JSZip 实例
-    const zip = new JSZip();
-    const folder = zip.folder("stickers");
+    function downloadSingleImage() {
+        if (currentPreviewIndex === -1 || !singlePreviewImg.src) return;
+        const prefix = prefixInput.value || 'emoji';
+        const format = formatSelect.value;
+        const ext = format === 'jpeg' ? 'jpg' : format;
+        const fileName = `${prefix}_${String(currentPreviewIndex + 1).padStart(2, '0')}.${ext}`;
+        fetch(singlePreviewImg.src).then(res => res.blob()).then(blob => saveAs(blob, fileName));
+    }
 
-    // 将所有裁切好的图片数据添加到 ZIP 文件夹中
-    croppedImagesData.forEach(imgData => {
-        // 需要去掉 Base64 URL 的头部信息 (data:image/png;base64,)
-        const base64Data = imgData.data.replace(/^data:image\/(png|jpg|jpeg);base64,/, "");
-        folder.file(imgData.name, base64Data, {base64: true});
-    });
+    // --- 打包下载 ---
+    function exportZip() {
+        if (!loadedImage) return;
+        const zip = new JSZip();
+        const folder = zip.folder("stickers");
+        const rows = parseInt(rowsInput.value);
+        const cols = parseInt(colsInput.value);
+        const format = formatSelect.value;
+        const prefix = prefixInput.value || 'emoji';
+        const cellW = loadedImage.naturalWidth / cols;
+        const cellH = loadedImage.naturalHeight / rows;
+        const canvas = document.createElement('canvas');
+        canvas.width = cellW;
+        canvas.height = cellH;
+        const ctx = canvas.getContext('2d');
 
-    // 生成 ZIP 文件并触发下载
-    zip.generateAsync({type:"blob"})
-    .then(function(content) {
-        // 使用 FileSaver.js 保存文件
-        saveAs(content, "emoji_stickers.zip");
-        statusMessage.textContent = "ZIP 文件下载已开始！";
-    });
+        let count = 0;
+        const promises = [];
+        downloadZipBtn.textContent = "打包中...";
+        downloadZipBtn.disabled = true;
+
+        for (let i = 0; i < rows * cols; i++) {
+            if (disabledCells.has(i)) continue;
+            const rowIndex = Math.floor(i / cols);
+            const colIndex = i % cols;
+            const srcX = colIndex * cellW;
+            const srcY = rowIndex * cellH;
+
+            ctx.clearRect(0, 0, cellW, cellH);
+            if (format === 'jpeg') {
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, cellW, cellH);
+            }
+            ctx.drawImage(loadedImage, srcX, srcY, cellW, cellH, 0, 0, cellW, cellH);
+
+            const p = new Promise(resolve => {
+                canvas.toBlob(blob => {
+                    const ext = format === 'jpeg' ? 'jpg' : format;
+                    folder.file(`${prefix}_${String(count + 1).padStart(2, '0')}.${ext}`, blob);
+                    count++;
+                    resolve();
+                }, `image/${format}`, parseInt(qualityInput.value) / 100);
+            });
+            promises.push(p);
+        }
+        Promise.all(promises).then(() => {
+            zip.generateAsync({type: "blob"}).then(content => {
+                saveAs(content, `${prefix}_stickers.zip`);
+                downloadZipBtn.textContent = "📦 导出 ZIP 压缩包";
+                downloadZipBtn.disabled = false;
+            });
+        });
+    }
 });

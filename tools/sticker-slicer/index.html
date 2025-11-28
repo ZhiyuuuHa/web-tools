@@ -3,72 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>表情包网格裁切工具</title>
-
+    <title>表情包工作台 - Web Tools</title>
     <link rel="stylesheet" href="../../assets/css/global.css">
     <link rel="stylesheet" href="style.css">
-
-    <style>
-        /* 覆盖 global.css 对 body 的一些设置，或者让 style.css 优先级更高 */
-        /* 这里为了美观，给工具容器加一点顶部距离 */
-        .tool-container-wrapper {
-            padding-top: 20px;
-        }
-    </style>
 </head>
 <body>
 
 <nav class="navbar">
     <a href="../../index.html" class="logo">🔙 返回工具箱</a>
     <div class="nav-links" style="display: flex; align-items: center;">
-        <span>表情包裁切器 v1.0</span>
-
+        <span>表情包工作台 Pro v2.4</span>
         <button id="themeToggle" class="theme-toggle-btn" title="切换模式">
             <span>🌞</span>
         </button>
     </div>
 </nav>
 
-<script src="../../assets/js/main.js"></script>
-<script src="script.js"></script>
+<div class="workspace-container">
 
-<div class="tool-container-wrapper">
-    <div class="container">
-        <h1>表情包网格裁切工具</h1>
-        <p>上传你的网格图片，它将自动在本地裁切并打包下载。</p>
-
-        <div class="controls">
-            <div class="control-group file-input-group">
-                <label for="imageInput" class="custom-file-upload">
-                    📁 选择图片文件
-                </label>
-                <input type="file" id="imageInput" accept="image/png, image/jpeg">
-                <span id="fileName">未选择文件</span>
+    <aside class="sidebar left-sidebar">
+        <div class="panel-section">
+            <h3>图片导入</h3>
+            <div class="upload-zone" id="dropZone">
+                <div class="upload-icon">📂</div>
+                <p>点击或拖拽图片到这里</p>
+                <input type="file" id="imageInput" accept="image/*" hidden>
             </div>
-
-            <div class="settings-group">
-                <div class="control-group">
-                    <label for="rowsInput">行数 (Rows):</label>
-                    <input type="number" id="rowsInput" value="4" min="1">
-                </div>
-                <div class="control-group">
-                    <label for="colsInput">列数 (Cols):</label>
-                    <input type="number" id="colsInput" value="6" min="1">
-                </div>
+            <div id="fileInfo" class="file-info hidden">
+                <p><strong>文件名:</strong> <span id="fileNameDisplay">-</span></p>
+                <p><strong>尺寸:</strong> <span id="fileSizeDisplay">-</span></p>
             </div>
-
-            <button id="processBtn" disabled>开始裁切 & 预览</button>
-            <button id="downloadBtn" class="download-btn" disabled>📦 下载所有图片 (ZIP)</button>
         </div>
 
-        <div id="statusMessage"></div>
+        <div class="panel-section">
+            <h3>网格设置</h3>
+            <div class="preset-buttons">
+                <button class="preset-btn" data-r="2" data-c="2">2x2</button>
+                <button class="preset-btn" data-r="3" data-c="3">3x3</button>
+                <button class="preset-btn" data-r="4" data-c="4">4x4</button>
+                <button class="preset-btn active" data-r="4" data-c="6">4x6</button>
+                <button class="preset-btn" data-r="5" data-c="5">5x5</button>
+            </div>
+            <div class="control-group">
+                <label>行数 (Rows): <span id="rowsVal">4</span></label>
+                <input type="range" id="rowsInput" min="1" max="10" value="4">
+            </div>
+            <div class="control-group">
+                <label>列数 (Cols): <span id="colsVal">6</span></label>
+                <input type="range" id="colsInput" min="1" max="10" value="6">
+            </div>
+        </div>
 
-        <div id="previewContainer" class="preview-grid hidden"></div>
+        <div class="panel-section">
+            <h3>网格样式</h3>
+            <div class="style-row">
+                <label>线条颜色</label>
+                <input type="color" id="gridColor" value="#ff0000">
+            </div>
+            <div class="control-group">
+                <label>线条粗细: <span id="gridWidthVal">2px</span></label>
+                <input type="range" id="gridWidth" min="1" max="10" value="2">
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-canvas-area">
+        <div class="canvas-header">
+            <span>编辑区域 (点击任意格子查看详情、下载或禁用)</span>
+        </div>
+        <div class="canvas-wrapper">
+            <div id="editorContainer" class="editor-container">
+            </div>
+        </div>
+    </main>
+
+    <aside class="sidebar right-sidebar">
+        <div class="panel-section">
+            <h3>导出设置</h3>
+            <div class="control-group">
+                <label>文件名前缀</label>
+                <input type="text" id="prefixInput" value="emoji" class="text-input">
+            </div>
+            <div class="control-group">
+                <label>导出格式</label>
+                <select id="formatSelect" class="text-input">
+                    <option value="png">PNG (推荐)</option>
+                    <option value="jpeg">JPG</option>
+                    <option value="webp">WebP</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>图片质量: <span id="qualityVal">100%</span></label>
+                <input type="range" id="qualityInput" min="10" max="100" value="100">
+            </div>
+
+            <button id="downloadZipBtn" class="action-btn primary-btn" disabled>📦 导出 ZIP 压缩包</button>
+        </div>
+
+        <div class="panel-section flex-grow empty-preview-hint">
+            <p>点击左侧网格可单独预览或下载</p>
+        </div>
+    </aside>
+</div>
+
+<div id="singlePreviewModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>详情 #<span id="singlePreviewIndex"></span></h3>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="single-image-wrapper">
+                <img id="singlePreviewImg" src="" alt="Preview">
+            </div>
+            <p id="modalHintText" class="hint">状态: 正常导出</p>
+        </div>
+        <div class="modal-footer" style="justify-content: space-between;">
+            <button id="toggleDisableBtn" class="modal-btn danger">🚫 禁用此图</button>
+
+            <div style="display: flex; gap: 10px;">
+                <button class="modal-btn secondary close-modal-btn">关闭</button>
+                <button class="modal-btn primary" id="singleDownloadBtn">⬇️ 下载</button>
+            </div>
+        </div>
     </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="../../assets/js/main.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
