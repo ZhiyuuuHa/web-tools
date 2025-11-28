@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>表情包网格裁切工具</title>
+
+    <link rel="stylesheet" href="../../assets/css/global.css">
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* 覆盖 global.css 对 body 的一些设置，或者让 style.css 优先级更高 */
+        /* 这里为了美观，给工具容器加一点顶部距离 */
+        .tool-container-wrapper {
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="../../index.html" class="logo">🔙 返回工具箱</a>
+    <div class="nav-links" style="display: flex; align-items: center;">
+        <span>表情包裁切器 v1.0</span>
+
+        <button id="themeToggle" class="theme-toggle-btn" title="切换模式">
+            <span>🌞</span>
+        </button>
+    </div>
+</nav>
+
+<script src="../../assets/js/main.js"></script>
+<script src="script.js"></script>
+
+<div class="tool-container-wrapper">
+    <div class="container">
+        <h1>表情包网格裁切工具</h1>
+        <p>上传你的网格图片，它将自动在本地裁切并打包下载。</p>
+
+        <div class="controls">
+            <div class="control-group file-input-group">
+                <label for="imageInput" class="custom-file-upload">
+                    📁 选择图片文件
+                </label>
+                <input type="file" id="imageInput" accept="image/png, image/jpeg">
+                <span id="fileName">未选择文件</span>
+            </div>
+
+            <div class="settings-group">
+                <div class="control-group">
+                    <label for="rowsInput">行数 (Rows):</label>
+                    <input type="number" id="rowsInput" value="4" min="1">
+                </div>
+                <div class="control-group">
+                    <label for="colsInput">列数 (Cols):</label>
+                    <input type="number" id="colsInput" value="6" min="1">
+                </div>
+            </div>
+
+            <button id="processBtn" disabled>开始裁切 & 预览</button>
+            <button id="downloadBtn" class="download-btn" disabled>📦 下载所有图片 (ZIP)</button>
+        </div>
+
+        <div id="statusMessage"></div>
+
+        <div id="previewContainer" class="preview-grid hidden"></div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

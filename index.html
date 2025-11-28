@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Tools Hub - 在线工具箱</title>
+    <link rel="stylesheet" href="assets/css/global.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="index.html" class="logo">🛠️ WebTools</a>
+    <div class="nav-links" style="display: flex; align-items: center; gap: 15px;">
+        <a href="#">关于</a>
+        <a href="https://github.com/your-repo" target="_blank">GitHub</a>
+
+        <button id="themeToggle" class="theme-toggle-btn" title="切换深色/浅色模式">
+            <span>🌞</span>
+        </button>
+    </div>
+</nav>
+
+<div class="main-container">
+    <div class="section-header">
+        <h2 class="section-title">可用工具</h2>
+        <input type="text" id="toolSearch" placeholder="🔍 搜索工具..." autocomplete="off">
+    </div>
+
+    <div class="tools-grid">
+
+        <a href="tools/sticker-slicer/index.html" class="tool-card">
+            <div class="tool-icon">✂️</div>
+            <h3>表情包裁切工具</h3>
+            <p>上传网格图，自动按行列裁切并打包下载 ZIP。</p>
+        </a>
+
+        <div class="tool-card" style="opacity: 0.6; cursor: default;">
+            <div class="tool-icon">➕</div>
+            <h3>敬请期待</h3>
+            <p>更多工具正在开发中...</p>
+        </div>
+
+    </div>
+</div>
+
+<script src="assets/js/main.js"></script>
+</body>
+</html>

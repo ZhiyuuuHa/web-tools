@@ -1,0 +1,226 @@
+/* =========================================
+   1. CSS 变量定义 (配色方案)
+   ========================================= */
+:root {
+    /* --- 默认亮色模式 (Light Mode) --- */
+    --primary-color: #4a90e2;       /* 主色调 (蓝色) */
+    --primary-hover: #357abd;       /* 主色调悬停深色 */
+    --bg-color: #eef1f5;            /* 网页大背景 */
+    --card-bg: #ffffff;             /* 卡片/容器背景 */
+    --text-color: #333333;          /* 主要文字颜色 */
+    --text-secondary: #666666;      /* 次要文字颜色 */
+    --border-color: #dddddd;        /* 边框颜色 */
+    --shadow: 0 4px 6px rgba(0,0,0,0.1); /* 阴影 */
+    --nav-bg: #ffffff;              /* 导航栏背景 */
+}
+
+/* --- 夜间模式覆盖 (Dark Mode) --- */
+body.dark-mode {
+    --primary-color: #5b9fe0;       /* 夜间模式主色稍微亮一点 */
+    --primary-hover: #7ab3e6;
+    --bg-color: #1a1a1a;            /* 深灰背景 */
+    --card-bg: #2d2d2d;             /* 卡片深色背景 */
+    --text-color: #f0f0f0;          /* 文字变白 */
+    --text-secondary: #aaaaaa;      /* 次级文字变浅灰 */
+    --border-color: #444444;        /* 边框变深 */
+    --shadow: 0 4px 6px rgba(0,0,0,0.5); /* 阴影加重 */
+    --nav-bg: #2d2d2d;              /* 导航栏变深 */
+}
+
+/* =========================================
+   2. 全局基础样式
+   ========================================= */
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    /* 添加背景色和文字颜色的平滑过渡效果 */
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 链接去下划线 */
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* =========================================
+   3. 顶部导航栏 (Navbar)
+   ========================================= */
+.navbar {
+    background: var(--nav-bg);
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between; /* 左右两端对齐 */
+    align-items: center;            /* 垂直居中 */
+    transition: background-color 0.3s ease;
+    position: sticky; /* 吸顶效果 */
+    top: 0;
+    z-index: 100;
+}
+
+.navbar .logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 20px; /* 链接之间的间距 */
+}
+
+.nav-links a {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    transition: color 0.3s;
+}
+
+.nav-links a:hover {
+    color: var(--primary-color);
+}
+
+/* =========================================
+   4. 夜间模式切换按钮
+   ========================================= */
+.theme-toggle-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%; /* 圆形按钮 */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.theme-toggle-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+
+    /* 核心尺寸设置 */
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+
+    /* 👇 【关键修复】 👇 */
+    min-width: 0 !important;   /* 强制覆盖 style.css 中的 200px 最小宽度 */
+    padding: 0 !important;     /* 强制去掉 style.css 中的内边距 */
+    margin-left: 15px;         /* 保持一点左间距 */
+
+    /* 布局与交互 */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    flex-shrink: 0; /* 防止被挤压 */
+}
+
+.theme-toggle-btn:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+/* =========================================
+   5. 主容器与布局
+   ========================================= */
+.main-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+/* 页面/分节标题 */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap; /* 手机端自动换行 */
+    gap: 15px;
+}
+
+.section-title {
+    margin: 0;
+    font-weight: 300;
+    font-size: 1.8rem;
+    color: var(--text-color);
+}
+
+/* 搜索框样式 */
+#toolSearch {
+    padding: 10px 15px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    width: 250px;
+    font-size: 0.9rem;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+#toolSearch:focus {
+    border-color: var(--primary-color);
+}
+
+/* =========================================
+   6. 工具卡片网格 (Tools Grid)
+   ========================================= */
+.tools-grid {
+    display: grid;
+    /* 响应式网格：每列最小宽 280px，自动填充 */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 30px;
+}
+
+.tool-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid transparent; /* 预留边框位置避免抖动 */
+    height: 100%; /* 让所有卡片高度一致 */
+    box-sizing: border-box;
+}
+
+.tool-card:hover {
+    transform: translateY(-5px); /* 上浮效果 */
+    box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+    border-color: var(--primary-color);
+}
+
+.tool-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.tool-card h3 {
+    margin: 0 0 10px 0;
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+.tool-card p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}

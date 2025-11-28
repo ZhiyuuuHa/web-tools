@@ -1,0 +1,169 @@
+/*
+ * 表情包裁切工具特定样式
+ * 注意：这里尽量使用 global.css 定义的变量，以支持夜间模式
+ */
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    /* 【修改】使用卡片背景变量，而不是写死的白色 */
+    background: var(--card-bg);
+    padding: 30px;
+    border-radius: 12px;
+    /* 【修改】使用全局定义的阴影 */
+    box-shadow: var(--shadow);
+    /* 添加过渡效果，让切换更平滑 */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+h1 {
+    text-align: center;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+p {
+    text-align: center;
+    margin-bottom: 30px;
+    /* 【修改】使用次级文字颜色变量 */
+    color: var(--text-secondary);
+}
+
+/* 控制区域样式 */
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    /* 【修改】使用网页背景变量作为底色，形成层次感 */
+    background-color: var(--bg-color);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    transition: background-color 0.3s ease;
+}
+
+.settings-group {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* 确保标签文字颜色跟随主题 */
+    color: var(--text-color);
+}
+
+/* 文件上传按钮美化 */
+input[type="file"] {
+    display: none;
+}
+
+.file-input-group {
+    flex-direction: row;
+    justify-content: center;
+    gap: 15px;
+    align-items: center;
+}
+
+.custom-file-upload {
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    /* 【修改】按钮背景使用卡片背景色 */
+    background: var(--card-bg);
+    display: inline-block;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.custom-file-upload:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+#fileName {
+    font-size: 0.9em;
+    /* 【修改】使用次级文字颜色 */
+    color: var(--text-secondary);
+}
+
+input[type="number"] {
+    padding: 10px;
+    /* 【修改】边框使用变量 */
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    width: 60px;
+    text-align: center;
+    font-size: 16px;
+    /* 【修改】输入框背景和文字颜色适配 */
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: var(--primary-color);
+    color: white;
+    transition: background-color 0.2s;
+    align-self: center;
+    min-width: 200px;
+}
+
+button:hover:not(:disabled) {
+    background-color: var(--primary-hover);
+}
+
+button:disabled {
+    background-color: #ccc; /* 禁用状态灰色可以保留，或者也定义一个变量 */
+    cursor: not-allowed;
+}
+
+.download-btn {
+    background-color: #28a745; /* 下载按钮的绿色可以保留，比较醒目 */
+}
+.download-btn:hover:not(:disabled) {
+    background-color: #218838;
+}
+
+#statusMessage {
+    text-align: center;
+    margin: 15px 0;
+    font-weight: bold;
+    color: var(--primary-color);
+    min-height: 24px;
+}
+
+/* 预览网格样式 */
+.preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+    padding: 20px;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+}
+
+.preview-item {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: contain;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    /* 【修改】预览图背景使用网页背景色，使其在深色模式下不那么刺眼 */
+    background: var(--bg-color);
+}
+
+.hidden {
+    display: none;
+}
