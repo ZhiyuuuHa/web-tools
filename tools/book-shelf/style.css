@@ -1,6 +1,5 @@
 /* =========================================
-   书架模块样式 (Book Shelf Styles)
-   使用全局 CSS 变量，自动支持夜间模式
+   书架模块样式 v2.0
    ========================================= */
 
 /* --- 页面标题区 --- */
@@ -95,8 +94,7 @@
     display: flex;
     flex-direction: column;
     border: 1px solid transparent;
-    text-decoration: none;
-    color: inherit;
+    cursor: pointer;
 }
 
 .book-card:hover {
@@ -105,7 +103,6 @@
     border-color: var(--primary-color);
 }
 
-/* 封面区域 */
 .book-cover {
     width: 100%;
     height: 240px;
@@ -123,13 +120,11 @@
     object-fit: cover;
 }
 
-/* 无封面时的默认图标 */
 .book-cover .default-cover {
     font-size: 4rem;
     opacity: 0.9;
 }
 
-/* 格式标签 */
 .format-badge {
     position: absolute;
     top: 10px;
@@ -139,30 +134,37 @@
     font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
-.format-badge.pdf {
-    background: #e74c3c;
+.format-badge.pdf { background: #e74c3c; color: white; }
+.format-badge.epub { background: #27ae60; color: white; }
+.format-badge.mobi { background: #f39c12; color: white; }
+.format-badge.other { background: #95a5a6; color: white; }
+
+.online-badge {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    background: rgba(39, 174, 96, 0.9);
+    color: white;
+    backdrop-filter: blur(4px);
+}
+
+.progress-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    background: rgba(0, 0, 0, 0.6);
     color: white;
 }
 
-.format-badge.epub {
-    background: #27ae60;
-    color: white;
-}
-
-.format-badge.mobi {
-    background: #f39c12;
-    color: white;
-}
-
-.format-badge.other {
-    background: #95a5a6;
-    color: white;
-}
-
-/* 书籍信息区 */
 .book-info {
     padding: 18px;
     flex: 1;
@@ -176,7 +178,6 @@
     color: var(--text-color);
     margin: 0 0 6px 0;
     line-height: 1.4;
-    /* 限制两行显示 */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -195,14 +196,12 @@
     margin: 0;
     line-height: 1.5;
     flex: 1;
-    /* 限制三行显示 */
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
 
-/* 下载按钮 */
 .download-btn {
     display: flex;
     align-items: center;
@@ -218,8 +217,16 @@
     transition: background 0.3s ease;
 }
 
+.download-btn.read-online {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+}
+
 .book-card:hover .download-btn {
     background: var(--primary-hover);
+}
+
+.book-card:hover .download-btn.read-online {
+    background: linear-gradient(135deg, #219a52 0%, #27ae60 100%);
 }
 
 /* --- 空状态 --- */
@@ -232,11 +239,6 @@
 .empty-icon {
     font-size: 4rem;
     margin-bottom: 15px;
-}
-
-.empty-state p {
-    font-size: 1.1rem;
-    margin: 0;
 }
 
 /* --- 开发者提示 --- */
@@ -257,11 +259,6 @@
     cursor: pointer;
     color: var(--text-secondary);
     font-size: 0.9rem;
-    outline: none;
-}
-
-.dev-note summary:hover {
-    color: var(--primary-color);
 }
 
 .note-content {
@@ -284,17 +281,677 @@
     color: var(--primary-color);
 }
 
-.note-content pre {
-    background: var(--bg-color);
-    padding: 15px;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    overflow-x: auto;
-    color: var(--text-color);
-    line-height: 1.6;
+/* =========================================
+   EPUB 阅读器样式
+   ========================================= */
+
+.reader-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    z-index: 9999;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
-/* --- 响应式适配 --- */
+.reader-modal.active {
+    display: flex;
+    opacity: 1;
+}
+
+.reader-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+}
+
+/* --- 工具栏 --- */
+.reader-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    flex-shrink: 0;
+    gap: 10px;
+    z-index: 100;
+}
+
+.toolbar-left,
+.toolbar-center,
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.toolbar-left {
+    flex: 1;
+    min-width: 0;
+}
+
+.toolbar-center {
+    flex-shrink: 0;
+}
+
+.toolbar-right {
+    flex: 1;
+    justify-content: flex-end;
+}
+
+.reader-title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.9;
+}
+
+.toolbar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.toolbar-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.toolbar-btn:active {
+    transform: scale(0.95);
+}
+
+.toolbar-btn.nav-btn {
+    width: 40px;
+    height: 40px;
+}
+
+.progress-display {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 6px 14px;
+    border-radius: 20px;
+    min-width: 60px;
+    text-align: center;
+}
+
+.page-indicator {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* --- 进度条 --- */
+.reading-progress-bar {
+    height: 3px;
+    background: rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #27ae60, #2ecc71);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* --- 阅读器主体 --- */
+.reader-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+}
+
+/* --- 侧边栏通用 --- */
+.sidebar {
+    width: 300px;
+    background: #fff;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar.active {
+    transform: translateX(0);
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #f8f9fa;
+}
+
+.sidebar-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: #333;
+}
+
+.sidebar-close {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #666;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.sidebar-close:hover {
+    background: #e0e0e0;
+    color: #333;
+}
+
+/* --- 目录 --- */
+.toc-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 0;
+}
+
+.toc-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.toc-list ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.toc-item a {
+    display: block;
+    padding: 12px 20px;
+    color: #555;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.toc-item a:hover {
+    background: #e8f4fc;
+    color: #2980b9;
+    border-left-color: #2980b9;
+}
+
+/* --- 书签 --- */
+.bookmark-actions {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.add-bookmark-btn {
+    width: 100%;
+    padding: 10px;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    background: transparent;
+    color: #666;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.add-bookmark-btn:hover {
+    border-color: #27ae60;
+    color: #27ae60;
+    background: rgba(39, 174, 96, 0.05);
+}
+
+.bookmark-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.empty-hint {
+    text-align: center;
+    color: #999;
+    padding: 30px;
+    font-size: 0.9rem;
+}
+
+.bookmark-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bookmark-item:hover {
+    background: #e8f4fc;
+}
+
+.bookmark-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.bookmark-chapter {
+    display: block;
+    font-size: 0.9rem;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bookmark-progress {
+    font-size: 0.75rem;
+    color: #999;
+}
+
+.bookmark-delete {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #999;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s;
+}
+
+.bookmark-item:hover .bookmark-delete {
+    opacity: 1;
+}
+
+.bookmark-delete:hover {
+    background: #fee;
+    color: #e74c3c;
+}
+
+/* --- 设置面板 --- */
+.settings-panel {
+    width: 320px;
+    right: 0;
+    left: auto;
+    border-right: none;
+    border-left: 1px solid #e0e0e0;
+    transform: translateX(100%);
+}
+
+.settings-panel.active {
+    transform: translateX(0);
+}
+
+.settings-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.setting-group {
+    margin-bottom: 24px;
+}
+
+.setting-label {
+    display: block;
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+/* 主题选项 */
+.theme-options {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.theme-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 6px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.75rem;
+    color: #666;
+}
+
+.theme-option:hover {
+    border-color: #aaa;
+}
+
+.theme-option.active {
+    border-color: var(--primary-color, #4a90e2);
+    background: rgba(74, 144, 226, 0.05);
+}
+
+.theme-preview {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid #ddd;
+}
+
+.theme-preview.light { background: #fff; }
+.theme-preview.sepia { background: #f4ecd8; }
+.theme-preview.dark { background: #1a1a2e; }
+.theme-preview.green { background: #c7edcc; }
+
+/* 字体选项 */
+.font-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.font-option {
+    padding: 8px 14px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.font-option:hover {
+    border-color: #aaa;
+}
+
+.font-option.active {
+    border-color: var(--primary-color, #4a90e2);
+    background: var(--primary-color, #4a90e2);
+    color: white;
+}
+
+/* 滑块控制 */
+.slider-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.slider-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.slider-btn:hover {
+    background: #f0f0f0;
+    border-color: #aaa;
+}
+
+.setting-slider {
+    flex: 1;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #e0e0e0;
+    border-radius: 3px;
+    outline: none;
+}
+
+.setting-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--primary-color, #4a90e2);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.setting-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+}
+
+/* 边距/翻页选项 */
+.margin-options,
+.flow-options {
+    display: flex;
+    gap: 8px;
+}
+
+.margin-option,
+.flow-option {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #666;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.margin-option:hover,
+.flow-option:hover {
+    border-color: #aaa;
+}
+
+.margin-option.active,
+.flow-option.active {
+    border-color: var(--primary-color, #4a90e2);
+    background: var(--primary-color, #4a90e2);
+    color: white;
+}
+
+/* --- 点击翻页区域 --- */
+.click-zone {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 80px;
+    z-index: 10;
+    cursor: pointer;
+}
+
+.click-zone-left {
+    left: 0;
+}
+
+.click-zone-right {
+    right: 0;
+}
+
+.click-zone:hover {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+/* --- 阅读内容区 --- */
+.reader-content {
+    flex: 1;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    background: #ffffff;
+    overflow: hidden;
+    position: relative;
+    transition: background 0.3s ease;
+}
+
+.reader-content[data-theme="dark"] {
+    background: #1a1a2e;
+}
+
+.reader-content[data-theme="sepia"] {
+    background: #f4ecd8;
+}
+
+.reader-content[data-theme="green"] {
+    background: #c7edcc;
+}
+
+.reader-content[data-margin="small"] #epubViewer {
+    max-width: 100%;
+    padding: 0 20px;
+}
+
+.reader-content[data-margin="medium"] #epubViewer {
+    max-width: 900px;
+    padding: 0 40px;
+}
+
+.reader-content[data-margin="large"] #epubViewer {
+    max-width: 700px;
+    padding: 0 60px;
+}
+
+#epubViewer {
+    width: 100%;
+    height: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 40px;
+    box-sizing: border-box;
+}
+
+/* --- 底部信息栏 --- */
+.reader-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+    font-size: 0.8rem;
+    color: #888;
+    flex-shrink: 0;
+}
+
+.reader-content[data-theme="dark"] ~ .reader-footer {
+    background: #16213e;
+    border-color: #2a2a4a;
+    color: #888;
+}
+
+/* --- 加载状态 --- */
+.reader-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 200;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e0e0e0;
+    border-top-color: var(--primary-color, #4a90e2);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.reader-loading p {
+    margin-top: 15px;
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.loading-tip {
+    font-size: 0.8rem !important;
+    color: #999 !important;
+}
+
+.loading-error {
+    text-align: center;
+}
+
+.error-download-btn {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 10px 25px;
+    background: var(--primary-color, #4a90e2);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+/* --- Toast 提示 --- */
+.toast-message {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    padding: 12px 24px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.toast-message.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* --- 响应式 --- */
 @media (max-width: 768px) {
     .page-title {
         font-size: 1.8rem;
@@ -321,6 +978,67 @@
     .book-cover {
         height: 200px;
     }
+
+    /* 阅读器移动端 */
+    .reader-toolbar {
+        padding: 6px 10px;
+    }
+
+    .toolbar-left {
+        order: 1;
+        flex: 0 0 auto;
+    }
+
+    .toolbar-center {
+        order: 3;
+        flex: 1 0 100%;
+        justify-content: center;
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .toolbar-right {
+        order: 2;
+        flex: 0 0 auto;
+    }
+
+    .reader-title {
+        display: none;
+    }
+
+    .toolbar-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .toolbar-btn.nav-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .sidebar {
+        width: 100%;
+    }
+
+    .settings-panel {
+        width: 100%;
+    }
+
+    .click-zone {
+        width: 60px;
+    }
+
+    #epubViewer {
+        padding: 0 15px;
+    }
+
+    .reader-content[data-margin="small"] #epubViewer,
+    .reader-content[data-margin="medium"] #epubViewer,
+    .reader-content[data-margin="large"] #epubViewer {
+        max-width: 100%;
+        padding: 0 15px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -340,4 +1058,38 @@
     .book-title {
         font-size: 0.9rem;
     }
+
+    .theme-options {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .click-zone {
+        width: 40px;
+    }
+}
+
+/* --- 滚动条美化 --- */
+.toc-content::-webkit-scrollbar,
+.bookmark-content::-webkit-scrollbar,
+.settings-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.toc-content::-webkit-scrollbar-track,
+.bookmark-content::-webkit-scrollbar-track,
+.settings-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.toc-content::-webkit-scrollbar-thumb,
+.bookmark-content::-webkit-scrollbar-thumb,
+.settings-content::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+
+.toc-content::-webkit-scrollbar-thumb:hover,
+.bookmark-content::-webkit-scrollbar-thumb:hover,
+.settings-content::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
 }
