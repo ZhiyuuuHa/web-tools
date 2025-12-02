@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>书架 - Web Tools</title>
+    
+    <link rel="stylesheet" href="../../../assets/css/global.css">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- EPUB.js 库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="../../../index.html" class="logo">🔙 返回工具箱</a>
+        
+        <div class="nav-links" style="display: flex; align-items: center;">
+            <span>书架 v2.0</span>
+            
+            <button id="themeToggle" class="theme-toggle-btn" title="切换模式">
+                <span>🌞</span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <!-- 页面标题区 -->
+        <div class="page-header">
+            <h1 class="page-title">📚 我的书架</h1>
+            <p class="page-subtitle">收藏的电子书籍，点击即可下载或预览</p>
+        </div>
+
+        <!-- 筛选与搜索栏 -->
+        <div class="filter-bar">
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="all">全部</button>
+                <button class="filter-tab" data-filter="pdf">PDF</button>
+                <button class="filter-tab" data-filter="epub">EPUB</button>
+                <button class="filter-tab" data-filter="other">其他</button>
+            </div>
+            <input type="text" id="bookSearch" class="search-input" placeholder="🔍 搜索书籍..." autocomplete="off">
+        </div>
+
+        <!-- 书籍网格 -->
+        <div class="books-grid" id="booksGrid">
+            <!-- 书籍卡片由 JS 动态生成 -->
+        </div>
+
+        <!-- 空状态提示 -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <div class="empty-icon">📭</div>
+            <p>没有找到匹配的书籍</p>
+        </div>
+    </div>
+
+    <!-- EPUB 阅读器模态框 -->
+    <div class="reader-modal" id="readerModal">
+        <div class="reader-container">
+            <!-- 阅读器顶部工具栏 -->
+            <div class="reader-toolbar" id="readerToolbar">
+                <div class="toolbar-left">
+                    <button class="toolbar-btn" id="readerClose" title="关闭 (Esc)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    <h3 class="reader-title" id="readerTitle">书籍标题</h3>
+                </div>
+                <div class="toolbar-center">
+                    <button class="toolbar-btn" id="prevPage" title="上一页 (←)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 18l-6-6 6-6"/>
+                        </svg>
+                    </button>
+                    <div class="progress-wrapper">
+                        <input type="range" id="progressSlider" class="progress-slider" min="0" max="100" value="0">
+                        <span class="progress-text" id="progressText">0%</span>
+                    </div>
+                    <button class="toolbar-btn" id="nextPage" title="下一页 (→)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="toolbar-right">
+                    <button class="toolbar-btn" id="toggleToc" title="目录 (T)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 12h18M3 6h18M3 18h18"/>
+                        </svg>
+                    </button>
+                    <button class="toolbar-btn" id="toggleSettings" title="设置 (S)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 1v4m0 14v4M4.22 4.22l2.83 2.83m9.9 9.9l2.83 2.83M1 12h4m14 0h4M4.22 19.78l2.83-2.83m9.9-9.9l2.83-2.83"/>
+                        </svg>
+                    </button>
+                    <button class="toolbar-btn" id="toggleFullscreen" title="全屏 (F)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/>
+                        </svg>
+                    </button>
+                    <a class="toolbar-btn" id="downloadEpub" title="下载" download>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 阅读器主体 -->
+            <div class="reader-body">
+                <!-- 目录侧边栏 -->
+                <div class="toc-sidebar" id="tocSidebar">
+                    <div class="toc-header">
+                        <h4>📖 目录</h4>
+                        <button class="toc-close" id="tocClose">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="toc-content" id="tocContent">
+                        <!-- 目录由 JS 动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 设置面板 -->
+                <div class="settings-panel" id="settingsPanel">
+                    <div class="settings-header">
+                        <h4>⚙️ 阅读设置</h4>
+                        <button class="settings-close" id="settingsClose">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="settings-content">
+                        <!-- 主题选择 -->
+                        <div class="setting-group">
+                            <label class="setting-label">阅读主题</label>
+                            <div class="theme-options">
+                                <button class="theme-option active" data-theme="light" title="亮色">
+                                    <span class="theme-preview light"></span>
+                                    <span>亮色</span>
+                                </button>
+                                <button class="theme-option" data-theme="sepia" title="护眼">
+                                    <span class="theme-preview sepia"></span>
+                                    <span>护眼</span>
+                                </button>
+                                <button class="theme-option" data-theme="dark" title="暗色">
+                                    <span class="theme-preview dark"></span>
+                                    <span>暗色</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 字体大小 -->
+                        <div class="setting-group">
+                            <label class="setting-label">字体大小 <span id="fontSizeValue">100%</span></label>
+                            <div class="setting-slider">
+                                <button class="slider-btn" id="fontDecrease">A-</button>
+                                <input type="range" id="fontSizeSlider" min="70" max="150" value="100" step="5">
+                                <button class="slider-btn" id="fontIncrease">A+</button>
+                            </div>
+                        </div>
+
+                        <!-- 行距 -->
+                        <div class="setting-group">
+                            <label class="setting-label">行距 <span id="lineHeightValue">1.6</span></label>
+                            <div class="setting-slider">
+                                <input type="range" id="lineHeightSlider" min="1.2" max="2.4" value="1.6" step="0.1">
+                            </div>
+                        </div>
+
+                        <!-- 页边距 -->
+                        <div class="setting-group">
+                            <label class="setting-label">页边距 <span id="marginValue">中等</span></label>
+                            <div class="margin-options">
+                                <button class="margin-option" data-margin="small">窄</button>
+                                <button class="margin-option active" data-margin="medium">中</button>
+                                <button class="margin-option" data-margin="large">宽</button>
+                            </div>
+                        </div>
+
+                        <!-- 字体选择 -->
+                        <div class="setting-group">
+                            <label class="setting-label">字体</label>
+                            <select id="fontFamilySelect" class="font-select">
+                                <option value="system">系统默认</option>
+                                <option value="serif">宋体 (衬线)</option>
+                                <option value="sans-serif">黑体 (无衬线)</option>
+                                <option value="kai">楷体</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 点击翻页区域 -->
+                <div class="click-zone click-zone-left" id="clickZoneLeft"></div>
+                <div class="click-zone click-zone-right" id="clickZoneRight"></div>
+
+                <!-- EPUB 内容区域 -->
+                <div class="reader-content" id="readerContent">
+                    <div id="epubViewer"></div>
+                </div>
+            </div>
+
+            <!-- 底部章节信息 -->
+            <div class="reader-footer" id="readerFooter">
+                <span class="chapter-info" id="chapterInfo">--</span>
+                <span class="page-info" id="pageInfo">--</span>
+            </div>
+
+            <!-- 加载提示 -->
+            <div class="reader-loading" id="readerLoading">
+                <div class="loading-spinner"></div>
+                <p>正在加载书籍...</p>
+                <p class="loading-tip">首次加载可能需要几秒钟</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加书籍说明（开发者提示） -->
+    <div class="dev-note">
+        <details>
+            <summary>📝 如何添加书籍？</summary>
+            <div class="note-content">
+                <p>1. 将书籍文件放入 <code>tools/book-shelf/books/</code> 目录</p>
+                <p>2. 在 <code>script.js</code> 的 <code>booksData</code> 数组中添加书籍信息：</p>
+                <pre>{
+    title: "书籍名称",
+    author: "作者",
+    format: "pdf",  // pdf / epub / mobi / other
+    cover: "covers/book-cover.jpg",  // 封面图片路径（可选）
+    file: "books/filename.pdf",  // 文件路径
+    description: "简短描述"
+}</pre>
+                <p>💡 <strong>EPUB 支持在线阅读！</strong>支持进度保存、主题切换、字体调节等功能。</p>
+            </div>
+        </details>
+    </div>
+
+    <script src="../../../assets/js/main.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

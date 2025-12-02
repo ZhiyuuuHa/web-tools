@@ -1,10 +1,19 @@
 /**
  * script.js - 书架模块脚本 v2.0
- * 功能：书籍管理、EPUB阅读器、书签、进度保存、自定义设置
+ * 功能：
+ * 1. 书籍数据管理与渲染
+ * 2. 格式筛选与搜索
+ * 3. EPUB 浏览器内阅读器（增强版）
+ *    - 阅读进度保存
+ *    - 多主题支持
+ *    - 字体/行距/边距调节
+ *    - 触摸滑动翻页
+ *    - 全屏模式
+ *    - 键盘快捷键
  */
 
 // =========================================
-// 书籍数据配置
+// 书籍数据配置 (在这里添加你的书籍)
 // =========================================
 const booksData = [
     {
@@ -13,7 +22,7 @@ const booksData = [
         format: "pdf",
         cover: "",
         file: "books/阿里巴巴Java开发手册.pdf",
-        description: "Java开发规范指南"
+        description: "阿里巴巴集团技术团队的集体智慧结晶"
     },
     {
         title: "深入理解Java虚拟机（第3版）",
@@ -21,7 +30,7 @@ const booksData = [
         format: "pdf",
         cover: "",
         file: "books/深入理解Java虚拟机：JVM高级特性与最佳实践（第3版）周志明.pdf",
-        description: "JVM高级特性与最佳实践"
+        description: "全面讲解JVM原理与性能调优"
     },
     {
         title: "MySQL技术内幕：InnoDB存储引擎",
@@ -29,7 +38,7 @@ const booksData = [
         format: "mobi",
         cover: "",
         file: "books/MySQL技术内幕：InnoDB存储引擎(第2版) (数据库技术丛书).mobi",
-        description: "深入InnoDB存储引擎原理"
+        description: "深入剖析InnoDB存储引擎实现原理"
     },
     {
         title: "Java并发编程的艺术",
@@ -37,7 +46,7 @@ const booksData = [
         format: "pdf",
         cover: "",
         file: "books/Java并发编程的艺术 (方腾飞, 魏鹏, 程晓明).pdf",
-        description: "Java并发编程深入讲解"
+        description: "Java并发编程核心技术详解"
     },
     {
         title: "网络是怎样连接的",
@@ -45,7 +54,7 @@ const booksData = [
         format: "pdf",
         cover: "",
         file: "books/网络是怎样连接的 (户根勤).pdf",
-        description: "图解网络连接原理"
+        description: "图解网络连接全过程"
     },
     {
         title: "码农翻身",
@@ -53,8 +62,9 @@ const booksData = [
         format: "epub",
         cover: "",
         file: "books/码农翻身 (刘欣).epub",
-        description: "用故事讲技术的编程书籍"
+        description: "用故事讲解技术的好书"
     },
+    // 👇 在这里继续添加更多书籍...
 ];
 
 // =========================================
@@ -65,92 +75,113 @@ const emptyState = document.getElementById('emptyState');
 const searchInput = document.getElementById('bookSearch');
 const filterTabs = document.querySelectorAll('.filter-tab');
 
+// 当前筛选状态
 let currentFilter = 'all';
 let currentSearch = '';
 
 // =========================================
-// EPUB 阅读器状态
+// EPUB 阅读器配置
 // =========================================
-let currentBook = null;
-let currentRendition = null;
-let currentBookFile = '';
-let readingStartTime = null;
-let totalReadingTime = 0;
+const STORAGE_KEY_PREFIX = 'epub_reader_';
 
-// 阅读器设置
+// 默认阅读设置
 const defaultSettings = {
     theme: 'light',
-    font: 'system',
     fontSize: 100,
-    lineHeight: 1.8,
+    lineHeight: 1.6,
     margin: 'medium',
-    flow: 'paginated'
+    fontFamily: 'system'
 };
 
+// 当前阅读器状态
+let currentBook = null;
+let currentRendition = null;
+let currentBookFile = null;
 let readerSettings = { ...defaultSettings };
+let isFullscreen = false;
+let touchStartX = 0;
+let touchStartY = 0;
 
-// 阅读器 DOM
+// 阅读器 DOM 元素
 const readerModal = document.getElementById('readerModal');
 const readerTitle = document.getElementById('readerTitle');
 const readerContent = document.getElementById('readerContent');
 const readerLoading = document.getElementById('readerLoading');
+const readerToolbar = document.getElementById('readerToolbar');
+const readerFooter = document.getElementById('readerFooter');
 const tocSidebar = document.getElementById('tocSidebar');
 const tocContent = document.getElementById('tocContent');
-const bookmarkSidebar = document.getElementById('bookmarkSidebar');
-const bookmarkContent = document.getElementById('bookmarkContent');
 const settingsPanel = document.getElementById('settingsPanel');
-const pageIndicator = document.getElementById('pageIndicator');
-const progressFill = document.getElementById('progressFill');
+const progressSlider = document.getElementById('progressSlider');
+const progressText = document.getElementById('progressText');
 const chapterInfo = document.getElementById('chapterInfo');
-const readingTimeEl = document.getElementById('readingTime');
+const pageInfo = document.getElementById('pageInfo');
 
 // =========================================
-// 本地存储工具
+// 工具函数
 // =========================================
-const Storage = {
-    getBookData(bookFile) {
-        try {
-            const data = localStorage.getItem(`epub_${btoa(bookFile)}`);
-            return data ? JSON.parse(data) : null;
-        } catch { return null; }
-    },
-    
-    saveBookData(bookFile, data) {
-        try {
-            const existing = this.getBookData(bookFile) || {};
-            localStorage.setItem(`epub_${btoa(bookFile)}`, JSON.stringify({ ...existing, ...data }));
-        } catch {}
-    },
-    
-    getSettings() {
-        try {
-            const data = localStorage.getItem('epub_reader_settings');
-            return data ? JSON.parse(data) : defaultSettings;
-        } catch { return defaultSettings; }
-    },
-    
-    saveSettings(settings) {
-        try {
-            localStorage.setItem('epub_reader_settings', JSON.stringify(settings));
-        } catch {}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function getBookStorageKey(bookFile) {
+    return STORAGE_KEY_PREFIX + btoa(encodeURIComponent(bookFile));
+}
+
+function saveReadingProgress(bookFile, cfi) {
+    try {
+        localStorage.setItem(getBookStorageKey(bookFile) + '_progress', cfi);
+    } catch (e) {
+        console.warn('无法保存阅读进度:', e);
     }
-};
+}
+
+function getReadingProgress(bookFile) {
+    try {
+        return localStorage.getItem(getBookStorageKey(bookFile) + '_progress');
+    } catch (e) {
+        return null;
+    }
+}
+
+function saveReaderSettings() {
+    try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'settings', JSON.stringify(readerSettings));
+    } catch (e) {
+        console.warn('无法保存阅读设置:', e);
+    }
+}
+
+function loadReaderSettings() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY_PREFIX + 'settings');
+        if (saved) {
+            readerSettings = { ...defaultSettings, ...JSON.parse(saved) };
+        }
+    } catch (e) {
+        readerSettings = { ...defaultSettings };
+    }
+}
 
 // =========================================
 // 渲染书籍卡片
 // =========================================
 function renderBooks() {
     const filteredBooks = booksData.filter(book => {
-        const formatMatch = currentFilter === 'all' || 
-            (currentFilter === 'other' ? !['pdf', 'epub'].includes(book.format) : book.format === currentFilter);
-        
+        const formatToMatch = currentFilter === 'other' 
+            ? !['pdf', 'epub'].includes(book.format)
+            : currentFilter === 'all' || book.format === currentFilter;
+
         const searchLower = currentSearch.toLowerCase();
-        const searchMatch = !currentSearch ||
+        const matchSearch = !currentSearch ||
             book.title.toLowerCase().includes(searchLower) ||
             book.author.toLowerCase().includes(searchLower) ||
             book.description.toLowerCase().includes(searchLower);
 
-        return formatMatch && searchMatch;
+        return formatToMatch && matchSearch;
     });
 
     booksGrid.innerHTML = '';
@@ -160,7 +191,8 @@ function renderBooks() {
     } else {
         emptyState.style.display = 'none';
         filteredBooks.forEach(book => {
-            booksGrid.appendChild(createBookCard(book));
+            const card = createBookCard(book);
+            booksGrid.appendChild(card);
         });
     }
 }
@@ -170,36 +202,41 @@ function createBookCard(book) {
     card.className = 'book-card';
     card.setAttribute('data-format', book.format);
 
-    const formatIcons = { pdf: '📕', epub: '📗', mobi: '📙', other: '📓' };
-    const isEpub = book.format === 'epub';
-    
-    // 检查阅读进度
-    const bookData = Storage.getBookData(book.file);
-    const progress = bookData?.progress || 0;
-    const hasProgress = progress > 0;
+    const formatIcons = {
+        pdf: '📕',
+        epub: '📗',
+        mobi: '📙',
+        other: '📓'
+    };
 
     const coverHTML = book.cover
         ? `<img src="${book.cover}" alt="${book.title}" loading="lazy">`
         : `<span class="default-cover">${formatIcons[book.format] || '📚'}</span>`;
 
+    const isEpub = book.format === 'epub';
+    const hasProgress = isEpub && getReadingProgress(book.file);
+    const actionText = isEpub ? '📖 在线阅读' : '📥 下载 / 预览';
+    const actionClass = isEpub ? 'download-btn read-online' : 'download-btn';
+
     card.innerHTML = `
         <div class="book-cover">
             ${coverHTML}
             <span class="format-badge ${book.format}">${book.format.toUpperCase()}</span>
-            ${isEpub ? '<span class="online-badge">在线阅读</span>' : ''}
-            ${hasProgress ? `<span class="progress-badge">${Math.round(progress * 100)}%</span>` : ''}
+            ${isEpub ? '<span class="online-badge">支持在线阅读</span>' : ''}
+            ${hasProgress ? '<span class="progress-badge">继续阅读</span>' : ''}
         </div>
         <div class="book-info">
             <h3 class="book-title">${escapeHtml(book.title)}</h3>
             <p class="book-author">${escapeHtml(book.author)}</p>
             <p class="book-desc">${escapeHtml(book.description)}</p>
-            <div class="download-btn ${isEpub ? 'read-online' : ''}">
-                <span>${isEpub ? '📖 开始阅读' : '📥 下载'}</span>
+            <div class="${actionClass}">
+                <span>${actionText}</span>
             </div>
         </div>
     `;
 
-    card.addEventListener('click', () => {
+    card.addEventListener('click', function(e) {
+        e.preventDefault();
         if (isEpub) {
             openEpubReader(book);
         } else {
@@ -210,74 +247,66 @@ function createBookCard(book) {
     return card;
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
+// =========================================
+// EPUB 阅读器核心功能
+// =========================================
 
-// =========================================
-// EPUB 阅读器核心
-// =========================================
 function openEpubReader(book) {
+    // 显示模态框和加载状态
     readerModal.classList.add('active');
     readerLoading.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    
-    currentBookFile = book.file;
+
+    // 设置标题和下载链接
     readerTitle.textContent = book.title;
     document.getElementById('downloadEpub').href = book.file;
+    currentBookFile = book.file;
 
     // 加载设置
-    readerSettings = Storage.getSettings();
+    loadReaderSettings();
     applySettingsToUI();
 
-    // 清理旧实例
+    // 清理之前的实例
     if (currentBook) {
         currentBook.destroy();
     }
 
-    document.getElementById('epubViewer').innerHTML = '';
+    // 清空阅读器容器
+    const viewer = document.getElementById('epubViewer');
+    viewer.innerHTML = '';
 
-    // 创建新实例
+    // 创建新的 EPUB 实例
     currentBook = ePub(book.file);
 
+    // 计算合适的宽度
+    const contentWidth = readerContent.clientWidth;
+    const marginSize = getMarginSize(readerSettings.margin);
+
     // 渲染配置
-    const marginMap = { small: 20, medium: 50, large: 100 };
-    
     currentRendition = currentBook.renderTo('epubViewer', {
         width: '100%',
         height: '100%',
         spread: 'none',
-        flow: readerSettings.flow === 'scrolled' ? 'scrolled-doc' : 'paginated',
-        manager: readerSettings.flow === 'scrolled' ? 'continuous' : 'default'
+        flow: 'paginated',
+        manager: 'continuous',
+        snap: true
     });
 
-    // 恢复阅读位置
-    const bookData = Storage.getBookData(book.file);
-    const startLocation = bookData?.location || undefined;
+    // 获取保存的进度
+    const savedProgress = getReadingProgress(book.file);
 
-    currentRendition.display(startLocation).then(() => {
+    // 显示内容
+    const displayPromise = savedProgress 
+        ? currentRendition.display(savedProgress)
+        : currentRendition.display();
+
+    displayPromise.then(() => {
         readerLoading.style.display = 'none';
-        applyReaderTheme(readerSettings.theme);
-        applyFont(readerSettings.font);
-        applyFontSize(readerSettings.fontSize);
-        applyLineHeight(readerSettings.lineHeight);
-        applyMargin(readerSettings.margin);
-        
-        // 开始计时
-        readingStartTime = Date.now();
-        totalReadingTime = bookData?.readingTime || 0;
-        updateReadingTime();
+        applyAllSettings();
+        setupRenditionEvents();
     }).catch(err => {
         console.error('EPUB 加载失败:', err);
-        readerLoading.innerHTML = `
-            <div class="loading-error">
-                <p>📚 加载失败</p>
-                <p class="loading-tip">请检查文件是否存在</p>
-                <a href="${book.file}" class="error-download-btn" download>📥 下载书籍</a>
-            </div>
-        `;
+        showLoadingError(book.file);
     });
 
     // 加载目录
@@ -285,31 +314,44 @@ function openEpubReader(book) {
         renderToc(nav.toc);
     });
 
-    // 监听位置变化
-    currentRendition.on('relocated', location => {
-        updateProgress(location);
-        saveReadingProgress(location);
-        updateBookmarkIcon();
+    // 生成位置信息（用于进度条）
+    currentBook.ready.then(() => {
+        // 使用较大的分块以加快生成速度
+        return currentBook.locations.generate(2048);
+    }).then((locations) => {
+        console.log('位置信息生成完成，共', locations.length, '个位置点');
+        updateProgress();
+    }).catch(err => {
+        console.warn('位置信息生成失败:', err);
     });
 
-    // iframe 内键盘事件
-    currentRendition.on('keydown', handleKeyDown);
-    
-    // 加载书签
-    renderBookmarks();
+    // 绑定事件
+    bindReaderEvents();
 }
 
 function closeEpubReader() {
-    // 保存阅读时间
-    if (readingStartTime) {
-        const sessionTime = Math.floor((Date.now() - readingStartTime) / 1000 / 60);
-        totalReadingTime += sessionTime;
-        Storage.saveBookData(currentBookFile, { readingTime: totalReadingTime });
+    // 保存进度
+    if (currentRendition && currentBookFile) {
+        const location = currentRendition.currentLocation();
+        if (location && location.start) {
+            saveReadingProgress(currentBookFile, location.start.cfi);
+        }
     }
 
     readerModal.classList.remove('active');
     document.body.style.overflow = '';
-    closeSidebars();
+    
+    // 退出全屏
+    if (isFullscreen) {
+        exitFullscreen();
+    }
+
+    // 关闭面板
+    tocSidebar.classList.remove('active');
+    settingsPanel.classList.remove('active');
+
+    // 移除事件监听
+    document.removeEventListener('keydown', handleKeydown);
 
     if (currentBook) {
         currentBook.destroy();
@@ -317,87 +359,173 @@ function closeEpubReader() {
         currentRendition = null;
     }
 
+    currentBookFile = null;
+
     // 重置加载状态
+    resetLoadingState();
+
+    // 刷新书籍列表（更新"继续阅读"标记）
+    renderBooks();
+}
+
+function showLoadingError(bookFile) {
+    readerLoading.innerHTML = `
+        <div class="loading-error">
+            <p>📚 加载失败</p>
+            <p style="font-size: 0.9rem; opacity: 0.7;">请检查文件是否存在或尝试下载后阅读</p>
+            <a href="${bookFile}" class="error-download-btn" download>📥 下载书籍</a>
+        </div>
+    `;
+}
+
+function resetLoadingState() {
     readerLoading.style.display = 'flex';
     readerLoading.innerHTML = `
         <div class="loading-spinner"></div>
         <p>正在加载书籍...</p>
         <p class="loading-tip">首次加载可能需要几秒钟</p>
     `;
-
-    // 刷新书籍列表显示进度
-    renderBooks();
 }
 
 // =========================================
-// 进度与位置
+// 阅读器事件处理
 // =========================================
-function updateProgress(location) {
-    if (!location || !currentBook) return;
 
-    // 页面进度
-    const progress = currentBook.locations.percentageFromCfi(location.start.cfi);
-    const percent = Math.round((progress || 0) * 100);
-    
-    pageIndicator.textContent = `${percent}%`;
-    progressFill.style.width = `${percent}%`;
+function setupRenditionEvents() {
+    if (!currentRendition) return;
 
-    // 章节信息
-    const currentSection = currentBook.spine.get(location.start.index);
-    if (currentSection) {
-        currentBook.loaded.navigation.then(nav => {
-            const chapter = findChapter(nav.toc, location.start.href);
-            chapterInfo.textContent = chapter?.label || `第 ${location.start.index + 1} 章`;
-        });
-    }
-}
-
-function findChapter(toc, href) {
-    for (const item of toc) {
-        if (href.includes(item.href.split('#')[0])) {
-            return item;
+    // 位置变化
+    currentRendition.on('relocated', (location) => {
+        updateProgress();
+        updatePageInfo(location);
+        
+        // 保存进度
+        if (currentBookFile && location.start) {
+            saveReadingProgress(currentBookFile, location.start.cfi);
         }
-        if (item.subitems?.length) {
-            const found = findChapter(item.subitems, href);
-            if (found) return found;
-        }
-    }
-    return null;
-}
-
-function saveReadingProgress(location) {
-    if (!location || !currentBookFile) return;
-    
-    const progress = currentBook.locations.percentageFromCfi(location.start.cfi) || 0;
-    
-    Storage.saveBookData(currentBookFile, {
-        location: location.start.cfi,
-        progress: progress,
-        lastRead: Date.now()
     });
+
+    // 点击事件（显示/隐藏工具栏）
+    currentRendition.on('click', () => {
+        // 在移动端点击中间区域切换工具栏
+    });
+
+    // 键盘事件（在 iframe 内）
+    currentRendition.on('keydown', handleKeydown);
 }
 
-function updateReadingTime() {
-    if (!readingStartTime) return;
-    
-    const sessionMinutes = Math.floor((Date.now() - readingStartTime) / 1000 / 60);
-    const total = totalReadingTime + sessionMinutes;
-    
-    if (total < 60) {
-        readingTimeEl.textContent = `阅读 ${total} 分钟`;
-    } else {
-        const hours = Math.floor(total / 60);
-        const mins = total % 60;
-        readingTimeEl.textContent = `阅读 ${hours}小时${mins}分钟`;
+function bindReaderEvents() {
+    // 键盘事件
+    document.addEventListener('keydown', handleKeydown);
+
+    // 触摸事件
+    readerContent.addEventListener('touchstart', handleTouchStart, { passive: true });
+    readerContent.addEventListener('touchend', handleTouchEnd, { passive: true });
+}
+
+function handleKeydown(e) {
+    if (!readerModal.classList.contains('active')) return;
+
+    switch(e.key) {
+        case 'ArrowLeft':
+            e.preventDefault();
+            currentRendition?.prev();
+            break;
+        case 'ArrowRight':
+        case ' ':
+            e.preventDefault();
+            currentRendition?.next();
+            break;
+        case 'Escape':
+            closeEpubReader();
+            break;
+        case 't':
+        case 'T':
+            toggleToc();
+            break;
+        case 's':
+        case 'S':
+            toggleSettings();
+            break;
+        case 'f':
+        case 'F':
+            toggleFullscreen();
+            break;
     }
 }
 
-// 每分钟更新阅读时间
-setInterval(updateReadingTime, 60000);
+function handleTouchStart(e) {
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+}
+
+function handleTouchEnd(e) {
+    const touchEndX = e.changedTouches[0].screenX;
+    const touchEndY = e.changedTouches[0].screenY;
+    
+    const diffX = touchEndX - touchStartX;
+    const diffY = touchEndY - touchStartY;
+    
+    // 水平滑动超过50px且垂直滑动不超过100px
+    if (Math.abs(diffX) > 50 && Math.abs(diffY) < 100) {
+        if (diffX > 0) {
+            currentRendition?.prev();
+        } else {
+            currentRendition?.next();
+        }
+    }
+}
 
 // =========================================
-// 目录
+// 进度与页面信息
 // =========================================
+
+function updateProgress() {
+    if (!currentBook || !currentRendition) return;
+
+    try {
+        const location = currentRendition.currentLocation();
+        if (!location || !location.start) return;
+
+        // 使用 locations 计算进度
+        if (currentBook.locations && currentBook.locations.length() > 0) {
+            const percent = currentBook.locations.percentageFromCfi(location.start.cfi);
+            const percentage = Math.round(percent * 100);
+            
+            if (progressSlider) {
+                progressSlider.value = percentage;
+            }
+            if (progressText) {
+                progressText.textContent = `${percentage}%`;
+            }
+        }
+    } catch (e) {
+        console.warn('更新进度失败:', e);
+    }
+}
+
+function updatePageInfo(location) {
+    if (!location) return;
+
+    // 更新页面信息
+    if (location.start && location.start.displayed) {
+        const { page, total } = location.start.displayed;
+        pageInfo.textContent = `${page} / ${total}`;
+    }
+
+    // 更新章节信息
+    if (currentBook && currentBook.navigation) {
+        const chapter = currentBook.navigation.get(location.start.href);
+        if (chapter) {
+            chapterInfo.textContent = chapter.label;
+        }
+    }
+}
+
+// =========================================
+// 目录功能
+// =========================================
+
 function renderToc(toc) {
     tocContent.innerHTML = '';
     
@@ -409,15 +537,24 @@ function renderToc(toc) {
         link.href = '#';
         link.textContent = item.label;
         link.style.paddingLeft = `${20 + level * 15}px`;
+        
         link.addEventListener('click', (e) => {
             e.preventDefault();
             currentRendition.display(item.href);
-            if (window.innerWidth <= 768) closeSidebars();
+            
+            // 高亮当前章节
+            document.querySelectorAll('.toc-item a').forEach(a => a.classList.remove('active'));
+            link.classList.add('active');
+            
+            // 移动端自动关闭目录
+            if (window.innerWidth <= 768) {
+                tocSidebar.classList.remove('active');
+            }
         });
         
         li.appendChild(link);
         
-        if (item.subitems?.length) {
+        if (item.subitems && item.subitems.length > 0) {
             const sublist = document.createElement('ul');
             item.subitems.forEach(sub => {
                 sublist.appendChild(createTocItem(sub, level + 1));
@@ -430,493 +567,367 @@ function renderToc(toc) {
     
     const ul = document.createElement('ul');
     ul.className = 'toc-list';
-    toc.forEach(item => ul.appendChild(createTocItem(item)));
+    toc.forEach(item => {
+        ul.appendChild(createTocItem(item));
+    });
     tocContent.appendChild(ul);
 }
 
-// =========================================
-// 书签
-// =========================================
-function getBookmarks() {
-    const data = Storage.getBookData(currentBookFile);
-    return data?.bookmarks || [];
-}
-
-function saveBookmarks(bookmarks) {
-    Storage.saveBookData(currentBookFile, { bookmarks });
-}
-
-function addCurrentBookmark() {
-    if (!currentRendition) return;
-    
-    const location = currentRendition.currentLocation();
-    if (!location) return;
-    
-    const bookmarks = getBookmarks();
-    const cfi = location.start.cfi;
-    
-    // 检查是否已存在
-    if (bookmarks.some(b => b.cfi === cfi)) {
-        showToast('此位置已有书签');
-        return;
-    }
-    
-    // 获取章节名
-    currentBook.loaded.navigation.then(nav => {
-        const chapter = findChapter(nav.toc, location.start.href);
-        
-        bookmarks.push({
-            cfi: cfi,
-            chapter: chapter?.label || '未知章节',
-            progress: Math.round((currentBook.locations.percentageFromCfi(cfi) || 0) * 100),
-            time: Date.now()
-        });
-        
-        saveBookmarks(bookmarks);
-        renderBookmarks();
-        updateBookmarkIcon();
-        showToast('书签已添加');
-    });
-}
-
-function removeBookmark(cfi) {
-    const bookmarks = getBookmarks().filter(b => b.cfi !== cfi);
-    saveBookmarks(bookmarks);
-    renderBookmarks();
-    updateBookmarkIcon();
-}
-
-function renderBookmarks() {
-    const bookmarks = getBookmarks();
-    
-    if (bookmarks.length === 0) {
-        bookmarkContent.innerHTML = '<p class="empty-hint">暂无书签</p>';
-        return;
-    }
-    
-    bookmarkContent.innerHTML = '';
-    
-    // 按时间倒序
-    bookmarks.sort((a, b) => b.time - a.time).forEach(bookmark => {
-        const item = document.createElement('div');
-        item.className = 'bookmark-item';
-        item.innerHTML = `
-            <div class="bookmark-info" data-cfi="${bookmark.cfi}">
-                <span class="bookmark-chapter">${escapeHtml(bookmark.chapter)}</span>
-                <span class="bookmark-progress">${bookmark.progress}%</span>
-            </div>
-            <button class="bookmark-delete" data-cfi="${bookmark.cfi}" title="删除">✕</button>
-        `;
-        
-        item.querySelector('.bookmark-info').addEventListener('click', () => {
-            currentRendition.display(bookmark.cfi);
-            if (window.innerWidth <= 768) closeSidebars();
-        });
-        
-        item.querySelector('.bookmark-delete').addEventListener('click', (e) => {
-            e.stopPropagation();
-            removeBookmark(bookmark.cfi);
-        });
-        
-        bookmarkContent.appendChild(item);
-    });
-}
-
-function updateBookmarkIcon() {
-    if (!currentRendition) return;
-    
-    const location = currentRendition.currentLocation();
-    if (!location) return;
-    
-    const bookmarks = getBookmarks();
-    const isBookmarked = bookmarks.some(b => b.cfi === location.start.cfi);
-    
-    const icon = document.getElementById('bookmarkIcon');
-    if (isBookmarked) {
-        icon.setAttribute('fill', 'currentColor');
-    } else {
-        icon.setAttribute('fill', 'none');
-    }
-}
-
-// =========================================
-// 阅读器设置
-// =========================================
-const themeStyles = {
-    light: { body: { background: '#ffffff', color: '#333333' }, 'a': { color: '#4a90e2' } },
-    dark: { body: { background: '#1a1a2e', color: '#d4d4d4' }, 'a': { color: '#64b5f6' } },
-    sepia: { body: { background: '#f4ecd8', color: '#5b4636' }, 'a': { color: '#8b6914' } },
-    green: { body: { background: '#c7edcc', color: '#2d4a32' }, 'a': { color: '#1a5928' } }
-};
-
-const fontFamilies = {
-    system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    serif: '"Songti SC", "SimSun", "宋体", serif',
-    'noto-serif': '"Noto Serif SC", "Source Han Serif SC", serif',
-    'lxgw': '"LXGW WenKai", cursive'
-};
-
-function applyReaderTheme(theme) {
-    readerSettings.theme = theme;
-    Storage.saveSettings(readerSettings);
-    
-    if (currentRendition) {
-        currentRendition.themes.register(theme, themeStyles[theme]);
-        currentRendition.themes.select(theme);
-    }
-    
-    readerContent.setAttribute('data-theme', theme);
-    
-    // 更新按钮状态
-    document.querySelectorAll('.theme-option').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.theme === theme);
-    });
-}
-
-function applyFont(font) {
-    readerSettings.font = font;
-    Storage.saveSettings(readerSettings);
-    
-    if (currentRendition) {
-        currentRendition.themes.font(fontFamilies[font]);
-    }
-    
-    document.querySelectorAll('.font-option').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.font === font);
-    });
-}
-
-function applyFontSize(size) {
-    readerSettings.fontSize = Math.max(70, Math.min(150, size));
-    Storage.saveSettings(readerSettings);
-    
-    if (currentRendition) {
-        currentRendition.themes.fontSize(`${readerSettings.fontSize}%`);
-    }
-    
-    document.getElementById('fontSizeValue').textContent = `${readerSettings.fontSize}%`;
-    document.getElementById('fontSizeSlider').value = readerSettings.fontSize;
-}
-
-function applyLineHeight(height) {
-    readerSettings.lineHeight = height;
-    Storage.saveSettings(readerSettings);
-    
-    if (currentRendition) {
-        currentRendition.themes.override('line-height', height);
-    }
-    
-    document.getElementById('lineHeightValue').textContent = height;
-    document.getElementById('lineHeightSlider').value = height;
-}
-
-function applyMargin(margin) {
-    readerSettings.margin = margin;
-    Storage.saveSettings(readerSettings);
-    
-    readerContent.setAttribute('data-margin', margin);
-    
-    document.querySelectorAll('.margin-option').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.margin === margin);
-    });
-}
-
-function applyFlow(flow) {
-    readerSettings.flow = flow;
-    Storage.saveSettings(readerSettings);
-    
-    // 需要重新渲染
-    if (currentBook && currentRendition) {
-        const location = currentRendition.currentLocation()?.start?.cfi;
-        
-        document.getElementById('epubViewer').innerHTML = '';
-        
-        currentRendition = currentBook.renderTo('epubViewer', {
-            width: '100%',
-            height: '100%',
-            spread: 'none',
-            flow: flow === 'scrolled' ? 'scrolled-doc' : 'paginated',
-            manager: flow === 'scrolled' ? 'continuous' : 'default'
-        });
-        
-        currentRendition.display(location).then(() => {
-            applyReaderTheme(readerSettings.theme);
-            applyFont(readerSettings.font);
-            applyFontSize(readerSettings.fontSize);
-            applyLineHeight(readerSettings.lineHeight);
-        });
-        
-        currentRendition.on('relocated', location => {
-            updateProgress(location);
-            saveReadingProgress(location);
-            updateBookmarkIcon();
-        });
-        
-        currentRendition.on('keydown', handleKeyDown);
-    }
-    
-    document.querySelectorAll('.flow-option').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.flow === flow);
-    });
-}
-
-function applySettingsToUI() {
-    document.querySelectorAll('.theme-option').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.theme === readerSettings.theme);
-    });
-    document.querySelectorAll('.font-option').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.font === readerSettings.font);
-    });
-    document.querySelectorAll('.margin-option').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.margin === readerSettings.margin);
-    });
-    document.querySelectorAll('.flow-option').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.flow === readerSettings.flow);
-    });
-    
-    document.getElementById('fontSizeSlider').value = readerSettings.fontSize;
-    document.getElementById('fontSizeValue').textContent = `${readerSettings.fontSize}%`;
-    document.getElementById('lineHeightSlider').value = readerSettings.lineHeight;
-    document.getElementById('lineHeightValue').textContent = readerSettings.lineHeight;
-}
-
-// =========================================
-// 侧边栏控制
-// =========================================
-function closeSidebars() {
-    tocSidebar.classList.remove('active');
-    bookmarkSidebar.classList.remove('active');
-    settingsPanel.classList.remove('active');
-}
-
-function toggleSidebar(sidebar) {
-    const isActive = sidebar.classList.contains('active');
-    closeSidebars();
-    if (!isActive) {
-        sidebar.classList.add('active');
-    }
-}
-
-// =========================================
-// 全屏
-// =========================================
-function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-        readerModal.requestFullscreen?.() || 
-        readerModal.webkitRequestFullscreen?.() ||
-        readerModal.msRequestFullscreen?.();
-    } else {
-        document.exitFullscreen?.() ||
-        document.webkitExitFullscreen?.() ||
-        document.msExitFullscreen?.();
-    }
-}
-
-// =========================================
-// 键盘控制
-// =========================================
-function handleKeyDown(e) {
-    if (!currentRendition || !readerModal.classList.contains('active')) return;
-    
-    switch(e.key) {
-        case 'ArrowLeft':
-            if (e.shiftKey) {
-                goToPrevChapter();
-            } else {
-                currentRendition.prev();
-            }
-            break;
-        case 'ArrowRight':
-            if (e.shiftKey) {
-                goToNextChapter();
-            } else {
-                currentRendition.next();
-            }
-            break;
-        case 'Escape':
-            closeEpubReader();
-            break;
-        case 't':
-        case 'T':
-            toggleSidebar(tocSidebar);
-            break;
-        case 'b':
-        case 'B':
-            toggleSidebar(bookmarkSidebar);
-            break;
-        case 's':
-        case 'S':
-            toggleSidebar(settingsPanel);
-            break;
-        case 'f':
-        case 'F':
-            toggleFullscreen();
-            break;
-    }
-}
-
-function goToPrevChapter() {
-    if (!currentBook || !currentRendition) return;
-    const loc = currentRendition.currentLocation();
-    if (loc?.start?.index > 0) {
-        currentRendition.display(currentBook.spine.get(loc.start.index - 1).href);
-    }
-}
-
-function goToNextChapter() {
-    if (!currentBook || !currentRendition) return;
-    const loc = currentRendition.currentLocation();
-    if (loc?.start?.index < currentBook.spine.length - 1) {
-        currentRendition.display(currentBook.spine.get(loc.start.index + 1).href);
-    }
-}
-
-// =========================================
-// 触摸手势
-// =========================================
-let touchStartX = 0;
-let touchStartY = 0;
-
-function handleTouchStart(e) {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-}
-
-function handleTouchEnd(e) {
-    if (!currentRendition || readerSettings.flow === 'scrolled') return;
-    
-    const touchEndX = e.changedTouches[0].clientX;
-    const touchEndY = e.changedTouches[0].clientY;
-    
-    const diffX = touchEndX - touchStartX;
-    const diffY = touchEndY - touchStartY;
-    
-    // 水平滑动超过50px且垂直滑动小于水平的一半
-    if (Math.abs(diffX) > 50 && Math.abs(diffY) < Math.abs(diffX) / 2) {
-        if (diffX > 0) {
-            currentRendition.prev();
-        } else {
-            currentRendition.next();
+function toggleToc() {
+    console.log('切换目录显示');
+    if (tocSidebar) {
+        tocSidebar.classList.toggle('active');
+        // 关闭设置面板
+        if (settingsPanel) {
+            settingsPanel.classList.remove('active');
         }
     }
 }
 
 // =========================================
-// Toast 提示
+// 设置功能
 // =========================================
-function showToast(message) {
-    const toast = document.createElement('div');
-    toast.className = 'toast-message';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => toast.classList.add('show'), 10);
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 2000);
+
+function toggleSettings() {
+    console.log('切换设置面板显示');
+    if (settingsPanel) {
+        settingsPanel.classList.toggle('active');
+        // 关闭目录面板
+        if (tocSidebar) {
+            tocSidebar.classList.remove('active');
+        }
+    }
 }
+
+function applySettingsToUI() {
+    // 主题
+    document.querySelectorAll('.theme-option').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === readerSettings.theme);
+    });
+
+    // 字体大小
+    document.getElementById('fontSizeSlider').value = readerSettings.fontSize;
+    document.getElementById('fontSizeValue').textContent = `${readerSettings.fontSize}%`;
+
+    // 行距
+    document.getElementById('lineHeightSlider').value = readerSettings.lineHeight;
+    document.getElementById('lineHeightValue').textContent = readerSettings.lineHeight;
+
+    // 边距
+    document.querySelectorAll('.margin-option').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.margin === readerSettings.margin);
+    });
+    const marginLabels = { small: '窄', medium: '中等', large: '宽' };
+    document.getElementById('marginValue').textContent = marginLabels[readerSettings.margin];
+
+    // 字体
+    document.getElementById('fontFamilySelect').value = readerSettings.fontFamily;
+}
+
+function applyAllSettings() {
+    applyTheme(readerSettings.theme);
+    applyFontSize(readerSettings.fontSize);
+    applyLineHeight(readerSettings.lineHeight);
+    applyMargin(readerSettings.margin);
+    applyFontFamily(readerSettings.fontFamily);
+}
+
+function applyTheme(theme) {
+    readerSettings.theme = theme;
+    
+    const themes = {
+        light: {
+            body: { 
+                background: '#ffffff', 
+                color: '#333333'
+            },
+            'a': { color: '#4a90e2' },
+            'p': { color: '#333333' },
+            'h1, h2, h3, h4, h5, h6': { color: '#222222' }
+        },
+        dark: {
+            body: { 
+                background: '#1a1a2e', 
+                color: '#e0e0e0'
+            },
+            'a': { color: '#64b5f6' },
+            'p': { color: '#e0e0e0' },
+            'h1, h2, h3, h4, h5, h6': { color: '#ffffff' }
+        },
+        sepia: {
+            body: { 
+                background: '#f4ecd8', 
+                color: '#5b4636'
+            },
+            'a': { color: '#8b6914' },
+            'p': { color: '#5b4636' },
+            'h1, h2, h3, h4, h5, h6': { color: '#3d2914' }
+        }
+    };
+    
+    if (currentRendition) {
+        currentRendition.themes.register(theme, themes[theme]);
+        currentRendition.themes.select(theme);
+    }
+    
+    readerContent.setAttribute('data-theme', theme);
+    saveReaderSettings();
+}
+
+function applyFontSize(size) {
+    readerSettings.fontSize = size;
+    
+    if (currentRendition) {
+        currentRendition.themes.fontSize(`${size}%`);
+    }
+    
+    document.getElementById('fontSizeValue').textContent = `${size}%`;
+    saveReaderSettings();
+}
+
+function applyLineHeight(height) {
+    readerSettings.lineHeight = height;
+    
+    if (currentRendition) {
+        currentRendition.themes.override('line-height', `${height}`);
+    }
+    
+    document.getElementById('lineHeightValue').textContent = height;
+    saveReaderSettings();
+}
+
+function getMarginSize(margin) {
+    const sizes = { small: 20, medium: 60, large: 100 };
+    return sizes[margin] || 60;
+}
+
+function applyMargin(margin) {
+    readerSettings.margin = margin;
+    
+    const size = getMarginSize(margin);
+    if (currentRendition) {
+        currentRendition.themes.override('padding', `20px ${size}px`);
+    }
+    
+    const marginLabels = { small: '窄', medium: '中等', large: '宽' };
+    document.getElementById('marginValue').textContent = marginLabels[margin];
+    saveReaderSettings();
+}
+
+function applyFontFamily(family) {
+    readerSettings.fontFamily = family;
+    
+    const fonts = {
+        system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        serif: '"Noto Serif SC", "Source Han Serif CN", "Songti SC", SimSun, serif',
+        'sans-serif': '"Noto Sans SC", "Source Han Sans CN", "PingFang SC", "Microsoft YaHei", sans-serif',
+        kai: '"Kaiti SC", STKaiti, KaiTi, serif'
+    };
+    
+    if (currentRendition) {
+        currentRendition.themes.override('font-family', fonts[family]);
+    }
+    
+    saveReaderSettings();
+}
+
+// =========================================
+// 全屏功能
+// =========================================
+
+function toggleFullscreen() {
+    if (!isFullscreen) {
+        enterFullscreen();
+    } else {
+        exitFullscreen();
+    }
+}
+
+function enterFullscreen() {
+    const elem = readerModal;
+    
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+    }
+    
+    isFullscreen = true;
+    readerModal.classList.add('fullscreen');
+}
+
+function exitFullscreen() {
+    if (document.exitFullscreen) {
+        document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+    } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+    }
+    
+    isFullscreen = false;
+    readerModal.classList.remove('fullscreen');
+}
+
+// 监听全屏变化
+document.addEventListener('fullscreenchange', () => {
+    isFullscreen = !!document.fullscreenElement;
+    readerModal.classList.toggle('fullscreen', isFullscreen);
+});
 
 // =========================================
 // 事件绑定
 // =========================================
 
-// 筛选
+// 格式筛选
 filterTabs.forEach(tab => {
     tab.addEventListener('click', function() {
         filterTabs.forEach(t => t.classList.remove('active'));
         this.classList.add('active');
-        currentFilter = this.dataset.filter;
+        currentFilter = this.getAttribute('data-filter');
         renderBooks();
     });
 });
 
 // 搜索
-searchInput?.addEventListener('input', e => {
-    currentSearch = e.target.value.trim();
-    renderBooks();
-});
+if (searchInput) {
+    searchInput.addEventListener('input', function(e) {
+        currentSearch = e.target.value.trim();
+        renderBooks();
+    });
+}
 
 // 阅读器控制
 document.getElementById('readerClose')?.addEventListener('click', closeEpubReader);
 document.getElementById('prevPage')?.addEventListener('click', () => currentRendition?.prev());
 document.getElementById('nextPage')?.addEventListener('click', () => currentRendition?.next());
-document.getElementById('prevChapter')?.addEventListener('click', goToPrevChapter);
-document.getElementById('nextChapter')?.addEventListener('click', goToNextChapter);
 
-// 侧边栏
-document.getElementById('toggleToc')?.addEventListener('click', () => toggleSidebar(tocSidebar));
-document.getElementById('tocClose')?.addEventListener('click', closeSidebars);
-document.getElementById('toggleBookmark')?.addEventListener('click', () => toggleSidebar(bookmarkSidebar));
-document.getElementById('bookmarkClose')?.addEventListener('click', closeSidebars);
-document.getElementById('toggleSettings')?.addEventListener('click', () => toggleSidebar(settingsPanel));
-document.getElementById('settingsClose')?.addEventListener('click', closeSidebars);
+// 目录按钮 - 打开目录
+const toggleTocBtn = document.getElementById('toggleToc');
+if (toggleTocBtn) {
+    toggleTocBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleToc();
+    });
+}
 
-// 书签
-document.getElementById('addBookmark')?.addEventListener('click', addCurrentBookmark);
+// 目录关闭按钮
+const tocCloseBtn = document.getElementById('tocClose');
+if (tocCloseBtn) {
+    tocCloseBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        tocSidebar.classList.remove('active');
+    });
+}
 
-// 全屏
+// 设置按钮
+const toggleSettingsBtn = document.getElementById('toggleSettings');
+if (toggleSettingsBtn) {
+    toggleSettingsBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleSettings();
+    });
+}
+
+// 设置关闭按钮
+const settingsCloseBtn = document.getElementById('settingsClose');
+if (settingsCloseBtn) {
+    settingsCloseBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        settingsPanel.classList.remove('active');
+    });
+}
+
 document.getElementById('toggleFullscreen')?.addEventListener('click', toggleFullscreen);
 
-// 设置控制
-document.querySelectorAll('.theme-option').forEach(btn => {
-    btn.addEventListener('click', () => applyReaderTheme(btn.dataset.theme));
-});
+// 进度条拖动
+if (progressSlider) {
+    // 拖动中实时更新显示
+    progressSlider.addEventListener('input', function() {
+        const percent = parseInt(this.value);
+        if (progressText) {
+            progressText.textContent = `${percent}%`;
+        }
+    });
+    
+    // 拖动结束后跳转
+    progressSlider.addEventListener('change', function() {
+        const percent = parseInt(this.value) / 100;
+        if (currentBook && currentBook.locations && currentBook.locations.length() > 0) {
+            const cfi = currentBook.locations.cfiFromPercentage(percent);
+            if (cfi && currentRendition) {
+                currentRendition.display(cfi);
+            }
+        }
+    });
+}
 
-document.querySelectorAll('.font-option').forEach(btn => {
-    btn.addEventListener('click', () => applyFont(btn.dataset.font));
-});
-
-document.getElementById('fontSizeSlider')?.addEventListener('input', e => {
-    applyFontSize(parseInt(e.target.value));
-});
-
-document.getElementById('fontDecrease')?.addEventListener('click', () => {
-    applyFontSize(readerSettings.fontSize - 10);
-});
-
-document.getElementById('fontIncrease')?.addEventListener('click', () => {
-    applyFontSize(readerSettings.fontSize + 10);
-});
-
-document.getElementById('lineHeightSlider')?.addEventListener('input', e => {
-    applyLineHeight(parseFloat(e.target.value));
-});
-
-document.querySelectorAll('.margin-option').forEach(btn => {
-    btn.addEventListener('click', () => applyMargin(btn.dataset.margin));
-});
-
-document.querySelectorAll('.flow-option').forEach(btn => {
-    btn.addEventListener('click', () => applyFlow(btn.dataset.flow));
-});
-
-// 点击翻页
+// 点击翻页区域
 document.getElementById('clickZoneLeft')?.addEventListener('click', () => currentRendition?.prev());
 document.getElementById('clickZoneRight')?.addEventListener('click', () => currentRendition?.next());
 
-// 触摸手势
-readerContent?.addEventListener('touchstart', handleTouchStart, { passive: true });
-readerContent?.addEventListener('touchend', handleTouchEnd, { passive: true });
+// 主题选择
+document.querySelectorAll('.theme-option').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.theme-option').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        applyTheme(this.dataset.theme);
+    });
+});
 
-// 键盘
-document.addEventListener('keydown', handleKeyDown);
+// 字体大小
+document.getElementById('fontSizeSlider')?.addEventListener('input', function() {
+    applyFontSize(parseInt(this.value));
+});
+document.getElementById('fontDecrease')?.addEventListener('click', () => {
+    const slider = document.getElementById('fontSizeSlider');
+    const newValue = Math.max(70, parseInt(slider.value) - 10);
+    slider.value = newValue;
+    applyFontSize(newValue);
+});
+document.getElementById('fontIncrease')?.addEventListener('click', () => {
+    const slider = document.getElementById('fontSizeSlider');
+    const newValue = Math.min(150, parseInt(slider.value) + 10);
+    slider.value = newValue;
+    applyFontSize(newValue);
+});
 
-// 点击空白关闭侧边栏
-readerContent?.addEventListener('click', (e) => {
-    if (e.target === readerContent || e.target.id === 'epubViewer') {
-        closeSidebars();
+// 行距
+document.getElementById('lineHeightSlider')?.addEventListener('input', function() {
+    applyLineHeight(parseFloat(this.value));
+});
+
+// 边距
+document.querySelectorAll('.margin-option').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.margin-option').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        applyMargin(this.dataset.margin);
+    });
+});
+
+// 字体选择
+document.getElementById('fontFamilySelect')?.addEventListener('change', function() {
+    applyFontFamily(this.value);
+});
+
+// 点击模态框外部关闭
+readerModal?.addEventListener('click', (e) => {
+    if (e.target === readerModal) {
+        closeEpubReader();
     }
 });
 
 // =========================================
 // 初始化
 // =========================================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
+    loadReaderSettings();
     renderBooks();
-    
-    // 生成位置信息（用于进度）
-    if (typeof ePub !== 'undefined') {
-        // epub.js 已加载
-    }
 });
