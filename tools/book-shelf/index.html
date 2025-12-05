@@ -4,62 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>书架 - Web Tools</title>
-    
+
     <link rel="stylesheet" href="../../assets/css/global.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <nav class="navbar">
-        <a href="../../index.html" class="logo">🔙 返回工具箱</a>
-        
-        <div class="nav-links" style="display: flex; align-items: center;">
-            <span>书架 v1.0</span>
-            
-            <button id="themeToggle" class="theme-toggle-btn" title="切换模式">
-                <span>🌞</span>
-            </button>
-        </div>
-    </nav>
+<nav class="navbar">
+    <a href="../../index.html" class="logo">🔙 返回工具箱</a>
 
-    <div class="main-container">
-        <!-- 页面标题区 -->
-        <div class="page-header">
-            <h1 class="page-title">📚 我的书架</h1>
-            <p class="page-subtitle">收藏的电子书籍，点击即可下载或预览</p>
-        </div>
+    <div class="nav-links" style="display: flex; align-items: center;">
+        <span>书架 v1.0</span>
 
-        <!-- 筛选与搜索栏 -->
-        <div class="filter-bar">
-            <div class="filter-tabs">
-                <button class="filter-tab active" data-filter="all">全部</button>
-                <button class="filter-tab" data-filter="pdf">PDF</button>
-                <button class="filter-tab" data-filter="epub">EPUB</button>
-                <button class="filter-tab" data-filter="other">其他</button>
-            </div>
-            <input type="text" id="bookSearch" class="search-input" placeholder="🔍 搜索书籍..." autocomplete="off">
-        </div>
+        <button id="themeToggle" class="theme-toggle-btn" title="切换模式">
+            <span>🌞</span>
+        </button>
+    </div>
+</nav>
 
-        <!-- 书籍网格 -->
-        <div class="books-grid" id="booksGrid">
-            <!-- 书籍卡片由 JS 动态生成 -->
-        </div>
-
-        <!-- 空状态提示 -->
-        <div class="empty-state" id="emptyState" style="display: none;">
-            <div class="empty-icon">📭</div>
-            <p>没有找到匹配的书籍</p>
-        </div>
+<div class="main-container">
+    <!-- 页面标题区 -->
+    <div class="page-header">
+        <h1 class="page-title">📚 我的书架</h1>
+        <p class="page-subtitle">收藏的电子书籍，点击即可下载或预览</p>
     </div>
 
-    <!-- 添加书籍说明（开发者提示） -->
-    <div class="dev-note">
-        <details>
-            <summary>📝 如何添加书籍？</summary>
-            <div class="note-content">
-                <p>1. 将书籍文件放入 <code>tools/book-shelf/books/</code> 目录</p>
-                <p>2. 在 <code>script.js</code> 的 <code>booksData</code> 数组中添加书籍信息：</p>
-                <pre>{
+    <!-- 筛选与搜索栏 -->
+    <div class="filter-bar">
+        <div class="filter-tabs">
+            <button class="filter-tab active" data-filter="all">全部</button>
+            <button class="filter-tab" data-filter="pdf">PDF</button>
+            <button class="filter-tab" data-filter="epub">EPUB</button>
+            <button class="filter-tab" data-filter="other">其他</button>
+        </div>
+        <input type="text" id="bookSearch" class="search-input" placeholder="🔍 搜索书籍..." autocomplete="off">
+    </div>
+
+    <!-- 书籍网格 -->
+    <div class="books-grid" id="booksGrid">
+        <!-- 书籍卡片由 JS 动态生成 -->
+    </div>
+
+    <!-- 空状态提示 -->
+    <div class="empty-state" id="emptyState" style="display: none;">
+        <div class="empty-icon">📭</div>
+        <p>没有找到匹配的书籍</p>
+    </div>
+</div>
+
+<!-- 添加书籍说明（开发者提示） -->
+<div class="dev-note">
+    <details>
+        <summary>📝 如何添加书籍？</summary>
+        <div class="note-content">
+            <p>1. 将书籍文件放入 <code>tools/book-shelf/books/</code> 目录</p>
+            <p>2. 在 <code>script.js</code> 的 <code>booksData</code> 数组中添加书籍信息：</p>
+            <pre>{
     title: "书籍名称",
     author: "作者",
     format: "pdf",  // pdf / epub / mobi / other
@@ -67,11 +67,11 @@
     file: "books/filename.pdf",  // 文件路径
     description: "简短描述"
 }</pre>
-            </div>
-        </details>
-    </div>
+        </div>
+    </details>
+</div>
 
-    <script src="../../assets/js/main.js"></script>
-    <script src="script.js"></script>
+<script src="../../assets/js/main.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
