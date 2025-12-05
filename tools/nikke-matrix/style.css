@@ -1,0 +1,205 @@
+/* --- 顶部控制区 --- */
+.game-header {
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.section-label {
+    display: block;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+}
+
+.input-section {
+    width: 100%;
+}
+
+textarea#matrix-input {
+    width: 100%;
+    height: 120px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    resize: vertical;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+}
+
+textarea#matrix-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.action-btn {
+    padding: 10px 18px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-color);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-btn:hover {
+    background: var(--bg-color);
+    border-color: var(--text-secondary);
+}
+
+.primary-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.primary-btn:hover {
+    background-color: var(--primary-hover);
+}
+
+.solve-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+}
+
+.solve-btn:hover {
+    background-color: #218838;
+}
+
+.danger-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    margin-left: auto;
+}
+
+.danger-btn:hover {
+    background-color: #c82333;
+}
+
+.action-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* --- 网格区域 --- */
+.game-wrapper {
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 10px 0;
+}
+
+.grid-container {
+    display: grid;
+    /* 10列，每列自适应 */
+    grid-template-columns: repeat(10, 34px);
+    grid-template-rows: repeat(16, 34px);
+    gap: 3px;
+    user-select: none;
+    margin: 0 auto;
+    width: fit-content;
+}
+
+.cell {
+    width: 34px;
+    height: 34px;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--text-color);
+    cursor: pointer;
+    /* 关键：让边框算在宽高内，防止加粗边框导致格子抖动 */
+    box-sizing: border-box;
+    position: relative;
+    /* 平滑过渡 */
+    transition: background-color 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+.cell.empty {
+    background-color: transparent;
+    border: 1px dashed var(--border-color);
+    color: transparent;
+}
+
+/* 编辑模式 */
+.grid-container.editing .cell {
+    cursor: text;
+    border-color: var(--primary-color);
+}
+
+.grid-container.editing .cell:hover {
+    background-color: rgba(74, 144, 226, 0.1);
+}
+
+/* --- 状态样式 --- */
+
+/* 1. 提示组 (Hint Box) */
+/* 统一用绿色，JS 会只给边缘加粗边框 */
+.cell.hint-box {
+    background-color: rgba(40, 167, 69, 0.15); /* 极淡的绿色背景，标识整体 */
+    color: #155724; /*深绿色文字*/
+    z-index: 5;
+}
+
+/* 2. 用户手动拖拽选区 (Selected) - 优先级最高 */
+.cell.selected {
+    background-color: rgba(74, 144, 226, 0.9) !important; /* 蓝色遮盖 */
+    color: white !important;
+    border: 1px solid #1a5c9e !important; /* 强制覆盖提示框的边框 */
+    box-shadow: 0 0 8px rgba(74, 144, 226, 0.6);
+    z-index: 10;
+}
+
+/* 3. 消除动画 */
+.cell.eliminated {
+    transform: scale(0);
+    opacity: 0;
+}
+
+.hidden {
+    display: none !important;
+}
+
+@media (max-width: 450px) {
+    .grid-container {
+        grid-template-columns: repeat(10, 1fr);
+        width: 100%;
+        gap: 2px;
+    }
+
+    .cell {
+        width: auto;
+        height: 8vw;
+        max-height: 35px;
+        font-size: 0.9rem;
+    }
+}
