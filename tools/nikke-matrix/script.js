@@ -2,13 +2,16 @@
  * Nikke Matrix Solver v2.6 (Auto Elimination)
  * 特性：
  * 1. 算法逻辑解耦，支持复用
- * 2. 新增“一键消除”功能，消除后自动递归计算
+ * 2. 新增"一键消除"功能，消除后自动递归计算
+ * 3. 使用overlay绘制连续边框，解决gap断层问题
  */
 
 // === 配置 ===
 const ROWS = 16;
 const COLS = 10;
 const TARGET_SUM = 10;
+const CELL_SIZE = 34;
+const GAP_SIZE = 3;
 
 // === 状态 ===
 let gridData = [];
@@ -19,11 +22,12 @@ let currentPos = {r: -1, c: -1};
 
 // === DOM ===
 const gridEl = document.getElementById('grid-container');
+const hintOverlay = document.getElementById('hint-overlay');
 const txtInput = document.getElementById('matrix-input');
 const btnImport = document.getElementById('btn-import');
 const btnEdit = document.getElementById('btn-toggle-edit');
 const btnSolve = document.getElementById('btn-solve');
-const btnAutoEliminate = document.getElementById('btn-auto-eliminate'); // 新增
+const btnAutoEliminate = document.getElementById('btn-auto-eliminate');
 const btnClearHints = document.getElementById('btn-clear-hints');
 const btnReset = document.getElementById('btn-reset');
 
@@ -36,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
 btnImport.addEventListener('click', importFromText);
 btnEdit.addEventListener('click', toggleEditMode);
 btnSolve.addEventListener('click', () => showHints(true));
-btnAutoEliminate.addEventListener('click', eliminateAllHints); // 绑定新事件
+btnAutoEliminate.addEventListener('click', eliminateAllHints);
 btnClearHints.addEventListener('click', clearHints);
 btnReset.addEventListener('click', () => {
     if (confirm("确定清空所有数据吗？")) {
@@ -82,6 +86,7 @@ function importFromText() {
 // === 2. Grid 基础 ===
 function initGrid(initialData = null) {
     gridEl.innerHTML = '';
+    hintOverlay.innerHTML = '';
     gridData = [];
 
     for (let r = 0; r < ROWS; r++) {
@@ -135,7 +140,7 @@ function onCellClick(e, r, c) {
 
 function updateCellUI(r, c, val) {
     const cell = getCellDom(r, c);
-    cell.className = 'cell'; // 重置样式
+    cell.className = 'cell';
     cell.style = '';
 
     if (val === 0) {
@@ -287,7 +292,51 @@ function calculateSolutions() {
 }
 
 /**
- * 可视化：调用算法并绘制绿色边框
+ * 获取实际的单元格尺寸和间距（支持响应式）
+ */
+function getCellMetrics() {
+    const firstCell = gridEl.children[0];
+    if (!firstCell) return {cellWidth: CELL_SIZE, cellHeight: CELL_SIZE, gapX: GAP_SIZE, gapY: GAP_SIZE};
+
+    const cellRect = firstCell.getBoundingClientRect();
+    const gridRect = gridEl.getBoundingClientRect();
+    const gridStyle = getComputedStyle(gridEl);
+
+    const gap = parseFloat(gridStyle.gap) || GAP_SIZE;
+
+    return {
+        cellWidth: cellRect.width,
+        cellHeight: cellRect.height,
+        gapX: gap,
+        gapY: gap,
+        gridLeft: gridRect.left,
+        gridTop: gridRect.top
+    };
+}
+
+/**
+ * 计算矩形框的像素位置
+ */
+function calculateBoxPosition(sol) {
+    const metrics = getCellMetrics();
+    const {cellWidth, cellHeight, gapX, gapY} = metrics;
+
+    // 计算起始位置（包含边框宽度的一半，使边框居中于单元格边缘）
+    const borderWidth = 3;
+    const offset = borderWidth / 2;
+
+    const left = sol.c1 * (cellWidth + gapX) - offset;
+    const top = sol.r1 * (cellHeight + gapY) - offset;
+
+    // 计算宽度和高度（跨越所有单元格和间隙）
+    const width = (sol.c2 - sol.c1 + 1) * cellWidth + (sol.c2 - sol.c1) * gapX + borderWidth;
+    const height = (sol.r2 - sol.r1 + 1) * cellHeight + (sol.r2 - sol.r1) * gapY + borderWidth;
+
+    return {left, top, width, height};
+}
+
+/**
+ * 可视化：调用算法并绘制连续的绿色边框
  */
 function showHints(showAlert = true) {
     clearHints();
@@ -298,21 +347,28 @@ function showHints(showAlert = true) {
         return;
     }
 
-    const BORDER_STYLE = '3px solid #28a745';
-
+    // 为每个解添加背景高亮
     solutions.forEach(sol => {
         for (let i = sol.r1; i <= sol.r2; i++) {
             for (let j = sol.c1; j <= sol.c2; j++) {
                 const cell = getCellDom(i, j);
-                cell.classList.add('hint-box');
-
-                // 画大框边缘
-                if (i === sol.r1) cell.style.borderTop = BORDER_STYLE;
-                if (i === sol.r2) cell.style.borderBottom = BORDER_STYLE;
-                if (j === sol.c1) cell.style.borderLeft = BORDER_STYLE;
-                if (j === sol.c2) cell.style.borderRight = BORDER_STYLE;
+                cell.classList.add('hint-highlight');
             }
         }
+    });
+
+    // 使用overlay绘制连续边框
+    solutions.forEach((sol, index) => {
+        const box = document.createElement('div');
+        box.className = 'hint-box-overlay';
+
+        const pos = calculateBoxPosition(sol);
+        box.style.left = pos.left + 'px';
+        box.style.top = pos.top + 'px';
+        box.style.width = pos.width + 'px';
+        box.style.height = pos.height + 'px';
+
+        hintOverlay.appendChild(box);
     });
 
     btnSolve.classList.add('hidden');
@@ -323,7 +379,6 @@ function showHints(showAlert = true) {
  * ⚡ 一键消除：自动消除当前算出的所有可行解，然后计算下一波
  */
 function eliminateAllHints() {
-    // 1. 获取当前所有可行解
     const solutions = calculateSolutions();
 
     if (solutions.length === 0) {
@@ -331,19 +386,15 @@ function eliminateAllHints() {
         return;
     }
 
-    // 2. 批量执行消除
     solutions.forEach(sol => {
         for (let i = sol.r1; i <= sol.r2; i++) {
             for (let j = sol.c1; j <= sol.c2; j++) {
-                // 只有数字才需要置零，空格子本身就是0
                 if (gridData[i][j].val > 0) {
                     gridData[i][j].val = 0;
 
-                    // UI 更新
                     const cell = getCellDom(i, j);
                     updateCellUI(i, j, 0);
 
-                    // 动画效果
                     cell.classList.add('eliminated');
                     setTimeout(() => cell.classList.remove('eliminated'), 300);
                 }
@@ -351,18 +402,20 @@ function eliminateAllHints() {
         }
     });
 
-    // 3. 消除完后，延迟一下，自动显示下一波提示
     setTimeout(() => {
-        // false 代表如果不剩余结果了，不要弹窗打扰用户
         showHints(false);
     }, 400);
 }
 
 function clearHints() {
-    document.querySelectorAll('.hint-box').forEach(el => {
-        el.classList.remove('hint-box');
-        el.style = '';
+    // 清除背景高亮
+    document.querySelectorAll('.hint-highlight').forEach(el => {
+        el.classList.remove('hint-highlight');
     });
+
+    // 清除overlay边框
+    hintOverlay.innerHTML = '';
+
     btnSolve.classList.remove('hidden');
     btnClearHints.classList.add('hidden');
 }
@@ -370,3 +423,24 @@ function clearHints() {
 function getCellDom(r, c) {
     return gridEl.children[r * COLS + c];
 }
+
+// 窗口大小变化时重新计算边框位置
+window.addEventListener('resize', () => {
+    if (hintOverlay.children.length > 0) {
+        // 如果有提示框，重新显示
+        const solutions = calculateSolutions();
+        hintOverlay.innerHTML = '';
+        solutions.forEach((sol) => {
+            const box = document.createElement('div');
+            box.className = 'hint-box-overlay';
+
+            const pos = calculateBoxPosition(sol);
+            box.style.left = pos.left + 'px';
+            box.style.top = pos.top + 'px';
+            box.style.width = pos.width + 'px';
+            box.style.height = pos.height + 'px';
+
+            hintOverlay.appendChild(box);
+        });
+    }
+});

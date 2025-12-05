@@ -4,13 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nikke 矩阵计算器 - Web Tools</title>
-    <link rel="stylesheet" href="../../assets/css/global.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <nav class="navbar">
-<!--    <a href="../../index.html" class="logo">🔙 返回工具箱</a>-->
     <div class="nav-links">
         <span>Nikke AZX Solver v2.6 (Auto Clear)</span>
         <button id="themeToggle" class="theme-toggle-btn"><span>🌞</span></button>
@@ -31,7 +29,9 @@
             <button id="btn-toggle-edit" class="action-btn">✏️ 手动微调</button>
             <button id="btn-solve" class="action-btn solve-btn">💡 计算提示</button>
 
-            <button id="btn-auto-eliminate" class="action-btn" style="background-color: #6f42c1; color: white; border:none;">⚡ 一键消除提示</button>
+            <button id="btn-auto-eliminate" class="action-btn"
+                    style="background-color: #6f42c1; color: white; border:none;">⚡ 一键消除提示
+            </button>
 
             <button id="btn-clear-hints" class="action-btn secondary-btn hidden">❌ 仅隐藏高亮</button>
             <button id="btn-reset" class="action-btn danger-btn">🗑️ 清空</button>
@@ -41,6 +41,8 @@
     <div class="game-wrapper">
         <div id="grid-container" class="grid-container">
         </div>
+        <!-- 提示框覆盖层容器 -->
+        <div id="hint-overlay" class="hint-overlay"></div>
     </div>
 
     <div class="instructions">
@@ -48,12 +50,11 @@
         <ul>
             <li><b>一键消除</b>：点击紫色按钮，会自动消除当前所有绿色框选的区域，并立即计算下一波结果。</li>
             <li><b>手动消除</b>：参考绿色框，鼠标拖拽消除，松手后会自动更新提示。</li>
-            <li><b>计算逻辑</b>：优先消除面积较小的区域（防止大区域“吞掉”太多数字导致死局）。</li>
+            <li><b>计算逻辑</b>：优先消除面积较小的区域（防止大区域"吞掉"太多数字导致死局）。</li>
         </ul>
     </div>
 </div>
 
-<script src="../../assets/js/main.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

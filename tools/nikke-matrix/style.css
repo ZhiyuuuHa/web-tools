@@ -1,3 +1,72 @@
+/* === CSS 变量（用于独立运行） === */
+:root {
+    --bg-color: #f5f5f5;
+    --card-bg: #ffffff;
+    --text-color: #333333;
+    --text-secondary: #666666;
+    --border-color: #dddddd;
+    --primary-color: #4a90e2;
+    --primary-hover: #357abd;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 深色模式 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color: #1a1a2e;
+        --card-bg: #16213e;
+        --text-color: #e4e4e4;
+        --text-secondary: #a0a0a0;
+        --border-color: #3a3a5c;
+        --primary-color: #4a90e2;
+        --primary-hover: #357abd;
+        --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    min-height: 100vh;
+}
+
+.navbar {
+    background: var(--card-bg);
+    padding: 15px 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+
+.nav-links {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.theme-toggle-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.main-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px 40px;
+}
+
 /* --- 顶部控制区 --- */
 .game-header {
     background: var(--card-bg);
@@ -111,17 +180,52 @@ textarea#matrix-input:focus {
     max-width: 100%;
     overflow-x: auto;
     padding: 10px 0;
+    position: relative; /* 关键：为overlay定位提供参考 */
 }
 
 .grid-container {
     display: grid;
-    /* 10列，每列自适应 */
     grid-template-columns: repeat(10, 34px);
     grid-template-rows: repeat(16, 34px);
     gap: 3px;
     user-select: none;
     margin: 0 auto;
     width: fit-content;
+    position: relative; /* 为overlay定位提供参考 */
+}
+
+/* === 提示框覆盖层 === */
+.hint-overlay {
+    position: absolute;
+    top: 10px; /* 与 game-wrapper 的 padding 对应 */
+    left: 50%;
+    transform: translateX(-50%);
+    width: fit-content;
+    height: fit-content;
+    pointer-events: none; /* 不阻挡鼠标事件 */
+    /* 与 grid-container 尺寸保持一致 */
+    width: calc(10 * 34px + 9 * 3px);
+    height: calc(16 * 34px + 15 * 3px);
+}
+
+/* 单个提示框（覆盖层） */
+.hint-box-overlay {
+    position: absolute;
+    border: 3px solid #28a745;
+    border-radius: 6px;
+    background-color: transparent;
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
+    pointer-events: none;
+    animation: hintPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes hintPulse {
+    0%, 100% {
+        box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(40, 167, 69, 0.7);
+    }
 }
 
 .cell {
@@ -137,10 +241,8 @@ textarea#matrix-input:focus {
     font-weight: bold;
     color: var(--text-color);
     cursor: pointer;
-    /* 关键：让边框算在宽高内，防止加粗边框导致格子抖动 */
     box-sizing: border-box;
     position: relative;
-    /* 平滑过渡 */
     transition: background-color 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
@@ -162,19 +264,17 @@ textarea#matrix-input:focus {
 
 /* --- 状态样式 --- */
 
-/* 1. 提示组 (Hint Box) */
-/* 统一用绿色，JS 会只给边缘加粗边框 */
-.cell.hint-box {
-    background-color: rgba(40, 167, 69, 0.15); /* 极淡的绿色背景，标识整体 */
-    color: #155724; /*深绿色文字*/
-    z-index: 5;
+/* 1. 提示高亮（背景） */
+.cell.hint-highlight {
+    background-color: rgba(40, 167, 69, 0.15);
+    color: #155724;
 }
 
 /* 2. 用户手动拖拽选区 (Selected) - 优先级最高 */
 .cell.selected {
-    background-color: rgba(74, 144, 226, 0.9) !important; /* 蓝色遮盖 */
+    background-color: rgba(74, 144, 226, 0.9) !important;
     color: white !important;
-    border: 1px solid #1a5c9e !important; /* 强制覆盖提示框的边框 */
+    border: 1px solid #1a5c9e !important;
     box-shadow: 0 0 8px rgba(74, 144, 226, 0.6);
     z-index: 10;
 }
@@ -189,6 +289,30 @@ textarea#matrix-input:focus {
     display: none !important;
 }
 
+/* --- 说明区域 --- */
+.instructions {
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    margin-top: 20px;
+}
+
+.instructions h3 {
+    margin-bottom: 15px;
+    color: var(--primary-color);
+}
+
+.instructions ul {
+    padding-left: 20px;
+}
+
+.instructions li {
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+/* === 响应式 === */
 @media (max-width: 450px) {
     .grid-container {
         grid-template-columns: repeat(10, 1fr);
@@ -201,5 +325,12 @@ textarea#matrix-input:focus {
         height: 8vw;
         max-height: 35px;
         font-size: 0.9rem;
+    }
+
+    .hint-overlay {
+        width: 100%;
+        height: auto;
+        left: 0;
+        transform: none;
     }
 }
