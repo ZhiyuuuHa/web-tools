@@ -1,0 +1,251 @@
+:root {
+    --gold: #ffd700;
+    --silver: #c0c0c0;
+    --bronze: #cd7f32;
+    --rank-4: #8b5cf6;
+    --rank-5: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient-primary: linear-gradient(135deg, var(--primary-color), #6366f1);
+}
+body.dark-mode { --gold: #ffc107; --silver: #b0b0b0; --bronze: #b87333; }
+
+.calculator-header { text-align: center; margin-bottom: 1.5rem; padding: 1.5rem 0; }
+.calculator-header h1 {
+    font-size: 2rem; margin: 0 0 0.5rem 0;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.calculator-header .subtitle { color: var(--text-secondary); margin: 0; font-size: 0.95rem; }
+
+.tab-nav {
+    display: flex; gap: 0.5rem; margin-bottom: 1.5rem;
+    background: var(--card-bg); padding: 0.5rem; border-radius: 12px; box-shadow: var(--shadow);
+}
+.tab-btn {
+    flex: 1; padding: 0.75rem 1rem; border: none; background: transparent;
+    color: var(--text-secondary); font-size: 0.9rem; font-weight: 500;
+    border-radius: 8px; cursor: pointer; transition: all 0.3s ease;
+}
+.tab-btn:hover { background: var(--bg-color); color: var(--text-color); }
+.tab-btn.active { background: var(--primary-color); color: white; }
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+.season-info-panel, .daily-input-panel, .records-panel, .history-panel, .settings-panel, .data-panel {
+    background: var(--card-bg); border-radius: 16px; padding: 1.5rem;
+    margin-bottom: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--border-color);
+}
+.panel-title {
+    display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; font-weight: 600;
+    color: var(--text-color); margin-bottom: 1.25rem; padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border-color);
+}
+.panel-title .icon { font-size: 1.2rem; }
+
+/* 赛季信息 */
+.season-meta {
+    display: flex; gap: 2rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+}
+.season-meta span {
+    font-size: 1rem; color: var(--text-secondary);
+    padding: 0.5rem 1rem; background: var(--bg-color); border-radius: 8px;
+}
+
+/* 排行榜 */
+.leaderboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+.leaderboard-item {
+    background: var(--bg-color); border-radius: 12px; padding: 1rem;
+    display: flex; align-items: center; gap: 1rem;
+    border: 2px solid transparent; transition: all 0.3s ease;
+}
+.leaderboard-item.rank-1 { border-color: var(--gold); }
+.leaderboard-item.rank-2 { border-color: var(--silver); }
+.leaderboard-item.rank-3 { border-color: var(--bronze); }
+.leaderboard-rank {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 1rem; color: white; flex-shrink: 0;
+}
+.leaderboard-item.rank-1 .leaderboard-rank { background: var(--gold); color: #333; }
+.leaderboard-item.rank-2 .leaderboard-rank { background: var(--silver); color: #333; }
+.leaderboard-item.rank-3 .leaderboard-rank { background: var(--bronze); }
+.leaderboard-item.rank-4 .leaderboard-rank { background: var(--rank-4); }
+.leaderboard-item.rank-5 .leaderboard-rank { background: var(--rank-5); }
+.leaderboard-info { flex: 1; }
+.leaderboard-name { font-weight: 600; color: var(--text-color); font-size: 0.95rem; }
+.leaderboard-points { color: var(--primary-color); font-size: 1.1rem; font-weight: bold; }
+
+/* 天数选择 */
+.day-selector {
+    display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+}
+.day-selector label { font-size: 0.9rem; color: var(--text-secondary); }
+.day-selector select {
+    padding: 0.6rem 1rem; border: 2px solid var(--border-color); border-radius: 8px;
+    background: var(--bg-color); color: var(--text-color); font-size: 0.95rem;
+    cursor: pointer; min-width: 140px;
+}
+.day-selector select:focus { outline: none; border-color: var(--primary-color); }
+.day-status { font-size: 0.85rem; padding: 0.4rem 0.8rem; border-radius: 20px; }
+.day-status.recorded { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+.day-status.empty { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+
+/* 玩家输入网格 */
+.players-input-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;
+}
+.player-input-card {
+    background: var(--bg-color); border-radius: 12px; padding: 1rem;
+    border: 2px solid var(--border-color);
+}
+.player-input-header {
+    display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;
+    padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);
+}
+.player-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; color: white; font-size: 0.85rem;
+}
+.player-input-card:nth-child(1) .player-avatar { background: var(--gold); color: #333; }
+.player-input-card:nth-child(2) .player-avatar { background: var(--silver); color: #333; }
+.player-input-card:nth-child(3) .player-avatar { background: var(--bronze); }
+.player-input-card:nth-child(4) .player-avatar { background: var(--rank-4); }
+.player-input-card:nth-child(5) .player-avatar { background: var(--rank-5); }
+.player-input-name { font-weight: 600; color: var(--text-color); flex: 1; }
+.player-input-points { font-weight: bold; color: var(--primary-color); font-size: 1.1rem; }
+
+.time-inputs-mini { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; }
+.time-input-mini { text-align: center; }
+.time-input-mini label {
+    display: block; font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.25rem;
+}
+.time-input-mini input {
+    width: 100%; padding: 0.4rem; border: 2px solid var(--border-color); border-radius: 6px;
+    background: var(--card-bg); color: var(--text-color); font-size: 0.9rem; text-align: center;
+}
+.time-input-mini input:focus { outline: none; border-color: var(--primary-color); }
+
+.player-input-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);
+    font-size: 0.85rem;
+}
+.time-total { color: var(--text-secondary); }
+.time-total.valid { color: var(--success); }
+.time-total.invalid { color: var(--danger); }
+
+.input-actions { display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center; }
+
+/* 按钮 */
+.btn {
+    padding: 0.75rem 1.5rem; border: none; border-radius: 10px; font-size: 0.95rem;
+    font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+.btn-primary { background: var(--gradient-primary); color: white; box-shadow: 0 4px 12px rgba(74,144,226,0.3); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(74,144,226,0.4); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-secondary { background: var(--card-bg); color: var(--text-color); border: 2px solid var(--border-color); }
+.btn-secondary:hover { border-color: var(--primary-color); color: var(--primary-color); }
+.btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-warning { background: var(--warning); color: white; }
+.btn-warning:hover { opacity: 0.9; transform: translateY(-2px); }
+.btn-warning:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-danger { background: var(--danger); color: white; }
+.btn-danger:hover { opacity: 0.9; }
+.btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+
+/* 记录表格 */
+.records-table-wrapper { overflow-x: auto; }
+.records-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.records-table th, .records-table td {
+    padding: 0.6rem 0.4rem; text-align: center; border-bottom: 1px solid var(--border-color);
+}
+.records-table th {
+    background: var(--bg-color); color: var(--text-secondary); font-weight: 600; font-size: 0.75rem;
+    position: sticky; top: 0;
+}
+.records-table td { color: var(--text-color); }
+.records-table tr:hover td { background: var(--bg-color); }
+.records-table .day-col { font-weight: 600; color: var(--primary-color); }
+.records-table .points-col { font-weight: 600; }
+.records-table .empty-row { color: var(--text-secondary); font-style: italic; }
+
+.season-actions { display: flex; justify-content: center; margin-top: 1rem; }
+
+/* 历史 */
+.history-list { display: grid; gap: 1rem; }
+.history-card {
+    background: var(--bg-color); border-radius: 12px; padding: 1.25rem;
+    border: 2px solid var(--border-color); transition: all 0.3s ease;
+}
+.history-card:hover { border-color: var(--primary-color); }
+.history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
+.history-header h4 { margin: 0; color: var(--text-color); font-size: 1.1rem; }
+.history-header span { color: var(--text-secondary); font-size: 0.85rem; }
+.history-rankings { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.history-rank-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+.history-rank-badge {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 0.75rem; color: white;
+}
+.history-rank-item:nth-child(1) .history-rank-badge { background: var(--gold); color: #333; }
+.history-rank-item:nth-child(2) .history-rank-badge { background: var(--silver); color: #333; }
+.history-rank-item:nth-child(3) .history-rank-badge { background: var(--bronze); }
+.history-actions { display: flex; gap: 0.5rem; }
+.empty-history { text-align: center; padding: 3rem; color: var(--text-secondary); }
+.empty-history .icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+
+/* 设置 */
+.settings-form { display: grid; gap: 1.25rem; }
+.setting-item { display: flex; flex-direction: column; gap: 0.5rem; }
+.setting-item > label { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; }
+.setting-item input[type="text"], .setting-item input[type="number"] {
+    padding: 0.75rem 1rem; border: 2px solid var(--border-color); border-radius: 10px;
+    font-size: 1rem; background: var(--bg-color); color: var(--text-color);
+}
+.setting-item input:focus { outline: none; border-color: var(--primary-color); }
+.player-names-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; }
+.player-names-grid input { padding: 0.6rem 0.8rem; font-size: 0.9rem; }
+.data-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+/* 弹窗 */
+.modal {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;
+}
+.modal.show { display: flex; }
+.modal-content {
+    background: var(--card-bg); border-radius: 16px; max-width: 900px; width: 100%;
+    max-height: 85vh; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+.modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color);
+}
+.modal-header h3 { margin: 0; color: var(--text-color); }
+.modal-close {
+    background: none; border: none; font-size: 1.5rem; color: var(--text-secondary);
+    cursor: pointer; padding: 0.25rem; line-height: 1;
+}
+.modal-close:hover { color: var(--text-color); }
+.modal-body { padding: 1.5rem; overflow-y: auto; max-height: calc(85vh - 80px); }
+
+@media (max-width: 768px) {
+    .calculator-header h1 { font-size: 1.5rem; }
+    .tab-nav { flex-wrap: wrap; }
+    .tab-btn { font-size: 0.8rem; padding: 0.6rem 0.8rem; }
+    .players-input-grid { grid-template-columns: 1fr; }
+    .input-actions { flex-direction: column; }
+    .btn { width: 100%; justify-content: center; }
+    .data-actions { flex-direction: column; }
+    .leaderboard { grid-template-columns: 1fr; }
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes modalFadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+.modal.show .modal-content { animation: modalFadeIn 0.3s ease; }

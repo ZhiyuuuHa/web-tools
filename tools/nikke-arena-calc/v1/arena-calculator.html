@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>竞技场积分计算器 - Web Tools</title>
+    <style>
+/* =========================================
+   全局基础样式 (来自 global.css)
+   ========================================= */
+:root {
+    --primary-color: #4a90e2;
+    --primary-hover: #357abd;
+    --bg-color: #eef1f5;
+    --card-bg: #ffffff;
+    --text-color: #333333;
+    --text-secondary: #666666;
+    --border-color: #dddddd;
+    --shadow: 0 4px 6px rgba(0,0,0,0.1);
+    --nav-bg: #ffffff;
+    --gold: #ffd700;
+    --silver: #c0c0c0;
+    --bronze: #cd7f32;
+    --rank-4: #8b5cf6;
+    --rank-5: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient-primary: linear-gradient(135deg, var(--primary-color), #6366f1);
+}
+
+body.dark-mode {
+    --primary-color: #5b9fe0;
+    --primary-hover: #7ab3e6;
+    --bg-color: #1a1a1a;
+    --card-bg: #2d2d2d;
+    --text-color: #f0f0f0;
+    --text-secondary: #aaaaaa;
+    --border-color: #444444;
+    --shadow: 0 4px 6px rgba(0,0,0,0.5);
+    --nav-bg: #2d2d2d;
+    --gold: #ffc107;
+    --silver: #b0b0b0;
+    --bronze: #b87333;
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+a { text-decoration: none; color: inherit; }
+
+/* 导航栏 */
+.navbar {
+    background: var(--nav-bg);
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.3s ease;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.navbar .logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.nav-links span {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.theme-toggle-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    min-width: 0 !important;
+    padding: 0 !important;
+    margin-left: 15px;
+}
+
+.theme-toggle-btn:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.main-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+/* =========================================
+   计算器专用样式
+   ========================================= */
+
+/* 头部区域 */
+.calculator-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 2rem 0;
+}
+
+.calculator-header h1 {
+    font-size: 2.2rem;
+    margin: 0 0 0.5rem 0;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.calculator-header .subtitle {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* 通用面板样式 */
+.settings-panel,
+.rules-panel,
+.players-panel,
+.results-panel,
+.strategy-panel {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.panel-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.panel-title .icon { font-size: 1.3rem; }
+
+/* 设置面板 */
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.setting-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.setting-item label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.setting-item input {
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 1rem;
+    background: var(--bg-color);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.setting-item input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+}
+
+/* 积分规则面板 */
+.rules-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.rule-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    background: var(--bg-color);
+    font-size: 0.9rem;
+}
+
+.rank-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: white;
+}
+
+.rank-1 .rank-badge { background: var(--gold); color: #333; }
+.rank-2 .rank-badge { background: var(--silver); color: #333; }
+.rank-3 .rank-badge { background: var(--bronze); color: white; }
+.rank-4 .rank-badge { background: var(--rank-4); }
+.rank-5 .rank-badge { background: var(--rank-5); }
+
+.points { font-weight: 600; color: var(--text-color); }
+
+/* 玩家配置面板 */
+.players-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.25rem;
+}
+
+.player-card {
+    background: var(--bg-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    border: 2px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.player-card:hover { border-color: var(--primary-color); }
+
+.player-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.player-name-input {
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--primary-color);
+    width: 120px;
+    transition: all 0.3s ease;
+}
+
+.player-name-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.player-mode { display: flex; gap: 0.5rem; }
+
+.mode-btn {
+    padding: 0.4rem 0.8rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mode-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.mode-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+/* 固定排名模式 */
+.fixed-rank-section { margin-top: 1rem; }
+
+.fixed-rank-select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--card-bg);
+    color: var(--text-color);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.fixed-rank-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* 自定义时间模式 */
+.custom-time-section { margin-top: 1rem; }
+.time-inputs-grid { display: grid; gap: 0.75rem; }
+
+.time-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--card-bg);
+    border-radius: 8px;
+}
+
+.time-input-row .rank-indicator {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.85rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.time-input-row:nth-child(1) .rank-indicator { background: var(--gold); color: #333; }
+.time-input-row:nth-child(2) .rank-indicator { background: var(--silver); color: #333; }
+.time-input-row:nth-child(3) .rank-indicator { background: var(--bronze); }
+.time-input-row:nth-child(4) .rank-indicator { background: var(--rank-4); }
+.time-input-row:nth-child(5) .rank-indicator { background: var(--rank-5); }
+
+.time-input-row label {
+    flex: 1;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.time-input-row input {
+    width: 70px;
+    padding: 0.5rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-size: 0.9rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.time-input-row input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.time-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--card-bg);
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.time-total .label { color: var(--text-secondary); }
+.time-total .value { font-weight: 600; }
+.time-total .value.valid { color: var(--success); }
+.time-total .value.invalid { color: var(--danger); }
+
+/* 每日积分显示 */
+.daily-points-display {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(99, 102, 241, 0.1));
+    border-radius: 10px;
+    text-align: center;
+}
+
+.daily-points-display .label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.daily-points-display .points-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* 操作按钮 */
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+}
+
+.btn-secondary {
+    background: var(--card-bg);
+    color: var(--text-color);
+    border: 2px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* 结果面板 */
+.results-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.result-card {
+    background: var(--bg-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+    border: 2px solid var(--border-color);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.result-card.rank-1 { border-color: var(--gold); }
+.result-card.rank-2 { border-color: var(--silver); }
+.result-card.rank-3 { border-color: var(--bronze); }
+
+.result-card .final-rank {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: white;
+}
+
+.result-card.rank-1 .final-rank { background: var(--gold); color: #333; }
+.result-card.rank-2 .final-rank { background: var(--silver); color: #333; }
+.result-card.rank-3 .final-rank { background: var(--bronze); }
+.result-card.rank-4 .final-rank { background: var(--rank-4); }
+.result-card.rank-5 .final-rank { background: var(--rank-5); }
+
+.result-card .player-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.result-card .total-points {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--text-color);
+    margin-bottom: 0.25rem;
+}
+
+.result-card .points-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* 每日明细 */
+.daily-breakdown { margin-top: 1.5rem; }
+
+.breakdown-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+}
+
+.breakdown-table { overflow-x: auto; }
+
+.breakdown-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.breakdown-table th,
+.breakdown-table td {
+    padding: 0.75rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.breakdown-table th {
+    background: var(--bg-color);
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.breakdown-table td { color: var(--text-color); }
+.breakdown-table tr:hover td { background: var(--bg-color); }
+
+/* 策略分析面板 */
+.strategy-content { display: grid; gap: 1rem; }
+
+.strategy-item {
+    padding: 1rem;
+    background: var(--bg-color);
+    border-radius: 10px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.strategy-item.warning { border-left-color: var(--warning); }
+.strategy-item.success { border-left-color: var(--success); }
+
+.strategy-item .title {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.strategy-item .content {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .calculator-header h1 { font-size: 1.6rem; }
+    .players-container { grid-template-columns: 1fr; }
+    .action-buttons { flex-direction: column; }
+    .btn { width: 100%; justify-content: center; }
+    .results-container { grid-template-columns: 1fr; }
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.results-panel, .strategy-panel { animation: fadeIn 0.4s ease; }
+.result-card { animation: fadeIn 0.4s ease; animation-fill-mode: both; }
+.result-card:nth-child(1) { animation-delay: 0.1s; }
+.result-card:nth-child(2) { animation-delay: 0.2s; }
+.result-card:nth-child(3) { animation-delay: 0.3s; }
+.result-card:nth-child(4) { animation-delay: 0.4s; }
+.result-card:nth-child(5) { animation-delay: 0.5s; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="../../../index.html" class="logo">🔙 返回工具箱</a>
+        <div class="nav-links" style="display: flex; align-items: center;">
+            <span>竞技场积分计算器 v1.0</span>
+            <button id="themeToggle" class="theme-toggle-btn" title="切换模式">
+                <span>🌞</span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="calculator-header">
+            <h1>🏆 竞技场积分计算器</h1>
+            <p class="subtitle">计算赛季积分，规划最优策略</p>
+        </div>
+
+        <div class="settings-panel">
+            <div class="panel-title">
+                <span class="icon">⚙️</span>
+                <span>赛季设置</span>
+            </div>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label for="seasonDays">赛季天数</label>
+                    <input type="number" id="seasonDays" value="14" min="1" max="30">
+                </div>
+                <div class="setting-item">
+                    <label for="currentDay">当前第几天</label>
+                    <input type="number" id="currentDay" value="1" min="1" max="30">
+                </div>
+            </div>
+        </div>
+
+        <div class="rules-panel">
+            <div class="panel-title">
+                <span class="icon">📊</span>
+                <span>排名积分规则</span>
+            </div>
+            <div class="rules-grid">
+                <div class="rule-item rank-1"><span class="rank-badge">1</span><span class="points">600/H</span></div>
+                <div class="rule-item rank-2"><span class="rank-badge">2</span><span class="points">595/H</span></div>
+                <div class="rule-item rank-3"><span class="rank-badge">3</span><span class="points">590/H</span></div>
+                <div class="rule-item rank-4"><span class="rank-badge">4</span><span class="points">585/H</span></div>
+                <div class="rule-item rank-5"><span class="rank-badge">5</span><span class="points">580/H</span></div>
+            </div>
+        </div>
+
+        <div class="players-panel">
+            <div class="panel-title">
+                <span class="icon">👥</span>
+                <span>玩家配置</span>
+            </div>
+            <div class="players-container" id="playersContainer"></div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-primary" id="calculateBtn"><span>🧮</span> 开始计算</button>
+            <button class="btn btn-secondary" id="resetBtn"><span>🔄</span> 重置</button>
+        </div>
+
+        <div class="results-panel" id="resultsPanel" style="display: none;">
+            <div class="panel-title">
+                <span class="icon">📈</span>
+                <span>计算结果</span>
+            </div>
+            <div class="results-container" id="resultsContainer"></div>
+            <div class="daily-breakdown" id="dailyBreakdown">
+                <div class="breakdown-title">每日积分明细</div>
+                <div class="breakdown-table" id="breakdownTable"></div>
+            </div>
+        </div>
+
+        <div class="strategy-panel" id="strategyPanel" style="display: none;">
+            <div class="panel-title">
+                <span class="icon">💡</span>
+                <span>策略分析</span>
+            </div>
+            <div class="strategy-content" id="strategyContent"></div>
+        </div>
+    </div>
+
+    <script>
+    // 夜间模式切换
+    document.addEventListener('DOMContentLoaded', function() {
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const body = document.body;
+        const iconSpan = themeToggleBtn ? themeToggleBtn.querySelector('span') : null;
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            body.classList.add('dark-mode');
+            if (iconSpan) iconSpan.textContent = '🌙';
+        }
+        if (themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', function() {
+                body.classList.toggle('dark-mode');
+                const isDark = body.classList.contains('dark-mode');
+                if (isDark) {
+                    localStorage.setItem('theme', 'dark');
+                    iconSpan.textContent = '🌙';
+                } else {
+                    localStorage.setItem('theme', 'light');
+                    iconSpan.textContent = '🌞';
+                }
+            });
+        }
+    });
+
+    // 主逻辑
+    document.addEventListener('DOMContentLoaded', function() {
+        const POINTS_PER_HOUR = { 1: 600, 2: 595, 3: 590, 4: 585, 5: 580 };
+        const DEFAULT_PLAYERS = 5;
+        
+        const seasonDaysInput = document.getElementById('seasonDays');
+        const currentDayInput = document.getElementById('currentDay');
+        const playersContainer = document.getElementById('playersContainer');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const breakdownTable = document.getElementById('breakdownTable');
+        const strategyPanel = document.getElementById('strategyPanel');
+        const strategyContent = document.getElementById('strategyContent');
+        
+        let players = [];
+        
+        function init() {
+            for (let i = 1; i <= DEFAULT_PLAYERS; i++) {
+                players.push({
+                    id: i,
+                    name: `玩家${i}`,
+                    mode: 'fixed',
+                    fixedRank: i,
+                    customHours: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+                });
+            }
+            renderPlayers();
+            bindEvents();
+        }
+        
+        function renderPlayers() {
+            playersContainer.innerHTML = '';
+            players.forEach(player => {
+                const card = createPlayerCard(player);
+                playersContainer.appendChild(card);
+            });
+        }
+        
+        function createPlayerCard(player) {
+            const card = document.createElement('div');
+            card.className = 'player-card';
+            card.dataset.playerId = player.id;
+            const dailyPoints = calculateDailyPoints(player);
+            
+            card.innerHTML = `
+                <div class="player-header">
+                    <input type="text" class="player-name-input" value="${player.name}" 
+                           data-player-id="${player.id}" maxlength="10">
+                    <div class="player-mode">
+                        <button class="mode-btn ${player.mode === 'fixed' ? 'active' : ''}" 
+                                data-mode="fixed" data-player-id="${player.id}">固定排名</button>
+                        <button class="mode-btn ${player.mode === 'custom' ? 'active' : ''}" 
+                                data-mode="custom" data-player-id="${player.id}">自定义</button>
+                    </div>
+                </div>
+                
+                <div class="fixed-rank-section" style="display: ${player.mode === 'fixed' ? 'block' : 'none'}">
+                    <select class="fixed-rank-select" data-player-id="${player.id}">
+                        <option value="1" ${player.fixedRank === 1 ? 'selected' : ''}>🥇 第1名 (600/H)</option>
+                        <option value="2" ${player.fixedRank === 2 ? 'selected' : ''}>🥈 第2名 (595/H)</option>
+                        <option value="3" ${player.fixedRank === 3 ? 'selected' : ''}>🥉 第3名 (590/H)</option>
+                        <option value="4" ${player.fixedRank === 4 ? 'selected' : ''}>4️⃣ 第4名 (585/H)</option>
+                        <option value="5" ${player.fixedRank === 5 ? 'selected' : ''}>5️⃣ 第5名 (580/H)</option>
+                    </select>
+                </div>
+                
+                <div class="custom-time-section" style="display: ${player.mode === 'custom' ? 'block' : 'none'}">
+                    <div class="time-inputs-grid">
+                        ${[1, 2, 3, 4, 5].map(rank => `
+                            <div class="time-input-row">
+                                <div class="rank-indicator">${rank}</div>
+                                <label>第${rank}名</label>
+                                <input type="number" class="hours-input" 
+                                       data-player-id="${player.id}" data-rank="${rank}"
+                                       value="${player.customHours[rank]}" min="0" max="24" step="0.5">
+                                <span>小时</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="time-total">
+                        <span class="label">每日总时间</span>
+                        <span class="value ${getTotalHours(player) === 24 ? 'valid' : 'invalid'}" 
+                              id="totalHours-${player.id}">${getTotalHours(player)}h / 24h</span>
+                    </div>
+                </div>
+                
+                <div class="daily-points-display">
+                    <div class="label">每日积分</div>
+                    <div class="points-value" id="dailyPoints-${player.id}">${dailyPoints.toLocaleString()}</div>
+                </div>
+            `;
+            return card;
+        }
+        
+        function getTotalHours(player) {
+            if (player.mode === 'fixed') return 24;
+            return Object.values(player.customHours).reduce((sum, h) => sum + h, 0);
+        }
+        
+        function calculateDailyPoints(player) {
+            if (player.mode === 'fixed') {
+                return POINTS_PER_HOUR[player.fixedRank] * 24;
+            } else {
+                let total = 0;
+                for (let rank = 1; rank <= 5; rank++) {
+                    total += player.customHours[rank] * POINTS_PER_HOUR[rank];
+                }
+                return total;
+            }
+        }
+        
+        function calculateSeasonResults() {
+            const seasonDays = parseInt(seasonDaysInput.value) || 14;
+            const results = players.map(player => {
+                const dailyPoints = calculateDailyPoints(player);
+                const totalPoints = dailyPoints * seasonDays;
+                return {
+                    id: player.id,
+                    name: player.name,
+                    dailyPoints: dailyPoints,
+                    totalPoints: totalPoints,
+                    mode: player.mode,
+                    fixedRank: player.fixedRank,
+                    customHours: { ...player.customHours }
+                };
+            });
+            results.sort((a, b) => b.totalPoints - a.totalPoints);
+            results.forEach((result, index) => { result.finalRank = index + 1; });
+            return results;
+        }
+        
+        function renderResults(results) {
+            const seasonDays = parseInt(seasonDaysInput.value) || 14;
+            resultsContainer.innerHTML = results.map(result => `
+                <div class="result-card rank-${result.finalRank}">
+                    <div class="final-rank">${result.finalRank}</div>
+                    <div class="player-name">${result.name}</div>
+                    <div class="total-points">${result.totalPoints.toLocaleString()}</div>
+                    <div class="points-label">赛季总积分</div>
+                </div>
+            `).join('');
+            renderBreakdownTable(results, seasonDays);
+            resultsPanel.style.display = 'block';
+            generateStrategy(results);
+        }
+        
+        function renderBreakdownTable(results, seasonDays) {
+            const currentDay = parseInt(currentDayInput.value) || 1;
+            const keyDays = [...new Set([1, currentDay, seasonDays])].sort((a, b) => a - b);
+            
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>玩家</th>
+                            <th>每日积分</th>
+                            ${keyDays.map(day => `<th>第${day}天累计</th>`).join('')}
+                            <th>最终排名</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            results.forEach(result => {
+                tableHTML += `
+                    <tr>
+                        <td><strong>${result.name}</strong></td>
+                        <td>${result.dailyPoints.toLocaleString()}</td>
+                        ${keyDays.map(day => `<td>${(result.dailyPoints * day).toLocaleString()}</td>`).join('')}
+                        <td><strong>${result.finalRank}</strong></td>
+                    </tr>
+                `;
+            });
+            tableHTML += '</tbody></table>';
+            breakdownTable.innerHTML = tableHTML;
+        }
+        
+        function generateStrategy(results) {
+            const seasonDays = parseInt(seasonDaysInput.value) || 14;
+            const strategies = [];
+            
+            for (let i = 0; i < results.length - 1; i++) {
+                const higher = results[i];
+                const lower = results[i + 1];
+                const gap = higher.totalPoints - lower.totalPoints;
+                const dailyGap = higher.dailyPoints - lower.dailyPoints;
+                
+                if (gap > 0 && dailyGap !== 0) {
+                    if (dailyGap > 0) {
+                        strategies.push({
+                            type: 'info',
+                            title: `${higher.name} vs ${lower.name}`,
+                            content: `${higher.name} 每日多获得 ${dailyGap} 分，${seasonDays}天后领先 ${gap.toLocaleString()} 分`
+                        });
+                    }
+                }
+            }
+            
+            players.forEach(player => {
+                if (player.mode === 'custom') {
+                    const totalHours = getTotalHours(player);
+                    if (totalHours !== 24) {
+                        strategies.push({
+                            type: 'warning',
+                            title: `⚠️ ${player.name} 时间配置异常`,
+                            content: `当前配置总时间为 ${totalHours} 小时，不等于24小时，请检查配置`
+                        });
+                    }
+                }
+            });
+            
+            if (results.length >= 3) {
+                const thirdPlace = results[2];
+                const fourthPlace = results[3];
+                if (fourthPlace) {
+                    const gapTo3rd = thirdPlace.totalPoints - fourthPlace.totalPoints;
+                    strategies.push({
+                        type: 'success',
+                        title: '🏅 进入前三条件',
+                        content: `第3名 (${thirdPlace.name}) 总积分 ${thirdPlace.totalPoints.toLocaleString()}，第4名 (${fourthPlace.name}) 需要额外 ${gapTo3rd.toLocaleString()} 分才能超越`
+                    });
+                }
+            }
+            
+            if (strategies.length > 0) {
+                strategyContent.innerHTML = strategies.map(s => `
+                    <div class="strategy-item ${s.type}">
+                        <div class="title">${s.title}</div>
+                        <div class="content">${s.content}</div>
+                    </div>
+                `).join('');
+                strategyPanel.style.display = 'block';
+            } else {
+                strategyPanel.style.display = 'none';
+            }
+        }
+        
+        function bindEvents() {
+            calculateBtn.addEventListener('click', function() {
+                const results = calculateSeasonResults();
+                renderResults(results);
+                resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+            
+            resetBtn.addEventListener('click', function() {
+                players = [];
+                for (let i = 1; i <= DEFAULT_PLAYERS; i++) {
+                    players.push({
+                        id: i,
+                        name: `玩家${i}`,
+                        mode: 'fixed',
+                        fixedRank: i,
+                        customHours: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+                    });
+                }
+                renderPlayers();
+                resultsPanel.style.display = 'none';
+                strategyPanel.style.display = 'none';
+            });
+            
+            playersContainer.addEventListener('click', handlePlayerClick);
+            playersContainer.addEventListener('change', handlePlayerChange);
+            playersContainer.addEventListener('input', handlePlayerInput);
+        }
+        
+        function handlePlayerClick(e) {
+            if (e.target.classList.contains('mode-btn')) {
+                const playerId = parseInt(e.target.dataset.playerId);
+                const mode = e.target.dataset.mode;
+                const player = players.find(p => p.id === playerId);
+                if (player) {
+                    player.mode = mode;
+                    if (mode === 'custom') {
+                        player.customHours = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+                        player.customHours[player.fixedRank] = 24;
+                    }
+                    renderPlayers();
+                }
+            }
+        }
+        
+        function handlePlayerChange(e) {
+            if (e.target.classList.contains('fixed-rank-select')) {
+                const playerId = parseInt(e.target.dataset.playerId);
+                const rank = parseInt(e.target.value);
+                const player = players.find(p => p.id === playerId);
+                if (player) {
+                    player.fixedRank = rank;
+                    updateDailyPointsDisplay(player);
+                }
+            }
+            if (e.target.classList.contains('player-name-input')) {
+                const playerId = parseInt(e.target.dataset.playerId);
+                const player = players.find(p => p.id === playerId);
+                if (player) { player.name = e.target.value || `玩家${playerId}`; }
+            }
+        }
+        
+        function handlePlayerInput(e) {
+            if (e.target.classList.contains('hours-input')) {
+                const playerId = parseInt(e.target.dataset.playerId);
+                const rank = parseInt(e.target.dataset.rank);
+                const hours = parseFloat(e.target.value) || 0;
+                const player = players.find(p => p.id === playerId);
+                if (player) {
+                    player.customHours[rank] = Math.max(0, Math.min(24, hours));
+                    updateTotalHoursDisplay(player);
+                    updateDailyPointsDisplay(player);
+                }
+            }
+            if (e.target.classList.contains('player-name-input')) {
+                const playerId = parseInt(e.target.dataset.playerId);
+                const player = players.find(p => p.id === playerId);
+                if (player) { player.name = e.target.value || `玩家${playerId}`; }
+            }
+        }
+        
+        function updateTotalHoursDisplay(player) {
+            const totalEl = document.getElementById(`totalHours-${player.id}`);
+            if (totalEl) {
+                const total = getTotalHours(player);
+                totalEl.textContent = `${total}h / 24h`;
+                totalEl.className = `value ${total === 24 ? 'valid' : 'invalid'}`;
+            }
+        }
+        
+        function updateDailyPointsDisplay(player) {
+            const pointsEl = document.getElementById(`dailyPoints-${player.id}`);
+            if (pointsEl) {
+                const dailyPoints = calculateDailyPoints(player);
+                pointsEl.textContent = dailyPoints.toLocaleString();
+            }
+        }
+        
+        init();
+    });
+    </script>
+</body>
+</html>

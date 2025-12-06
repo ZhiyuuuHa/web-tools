@@ -1,0 +1,607 @@
+/* =========================================
+   竞技场积分计算器 - 样式文件
+   ========================================= */
+
+/* 自定义变量扩展 */
+:root {
+    --gold: #ffd700;
+    --silver: #c0c0c0;
+    --bronze: #cd7f32;
+    --rank-4: #8b5cf6;
+    --rank-5: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient-primary: linear-gradient(135deg, var(--primary-color), #6366f1);
+}
+
+body.dark-mode {
+    --gold: #ffc107;
+    --silver: #b0b0b0;
+    --bronze: #b87333;
+}
+
+/* =========================================
+   头部区域
+   ========================================= */
+.calculator-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 2rem 0;
+}
+
+.calculator-header h1 {
+    font-size: 2.2rem;
+    margin: 0 0 0.5rem 0;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.calculator-header .subtitle {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* =========================================
+   通用面板样式
+   ========================================= */
+.settings-panel,
+.rules-panel,
+.players-panel,
+.results-panel,
+.strategy-panel {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.panel-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.panel-title .icon {
+    font-size: 1.3rem;
+}
+
+/* =========================================
+   设置面板
+   ========================================= */
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.setting-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.setting-item label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.setting-item input {
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 1rem;
+    background: var(--bg-color);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.setting-item input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+}
+
+/* =========================================
+   积分规则面板
+   ========================================= */
+.rules-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.rule-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    background: var(--bg-color);
+    font-size: 0.9rem;
+}
+
+.rank-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: white;
+}
+
+.rank-1 .rank-badge { background: var(--gold); color: #333; }
+.rank-2 .rank-badge { background: var(--silver); color: #333; }
+.rank-3 .rank-badge { background: var(--bronze); color: white; }
+.rank-4 .rank-badge { background: var(--rank-4); }
+.rank-5 .rank-badge { background: var(--rank-5); }
+
+.points {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+/* =========================================
+   玩家配置面板
+   ========================================= */
+.players-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.25rem;
+}
+
+.player-card {
+    background: var(--bg-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    border: 2px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.player-card:hover {
+    border-color: var(--primary-color);
+}
+
+.player-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.player-name-input {
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--primary-color);
+    width: 120px;
+    transition: all 0.3s ease;
+}
+
+.player-name-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.player-mode {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.mode-btn {
+    padding: 0.4rem 0.8rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mode-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.mode-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+/* 固定排名模式 */
+.fixed-rank-section {
+    margin-top: 1rem;
+}
+
+.fixed-rank-select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--card-bg);
+    color: var(--text-color);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.fixed-rank-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* 自定义时间模式 */
+.custom-time-section {
+    margin-top: 1rem;
+}
+
+.time-inputs-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.time-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--card-bg);
+    border-radius: 8px;
+}
+
+.time-input-row .rank-indicator {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.85rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.time-input-row:nth-child(1) .rank-indicator { background: var(--gold); color: #333; }
+.time-input-row:nth-child(2) .rank-indicator { background: var(--silver); color: #333; }
+.time-input-row:nth-child(3) .rank-indicator { background: var(--bronze); }
+.time-input-row:nth-child(4) .rank-indicator { background: var(--rank-4); }
+.time-input-row:nth-child(5) .rank-indicator { background: var(--rank-5); }
+
+.time-input-row label {
+    flex: 1;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.time-input-row input {
+    width: 70px;
+    padding: 0.5rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-size: 0.9rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.time-input-row input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.time-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--card-bg);
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.time-total .label {
+    color: var(--text-secondary);
+}
+
+.time-total .value {
+    font-weight: 600;
+}
+
+.time-total .value.valid {
+    color: var(--success);
+}
+
+.time-total .value.invalid {
+    color: var(--danger);
+}
+
+/* 每日积分显示 */
+.daily-points-display {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(99, 102, 241, 0.1));
+    border-radius: 10px;
+    text-align: center;
+}
+
+.daily-points-display .label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.daily-points-display .points-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* =========================================
+   操作按钮
+   ========================================= */
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+}
+
+.btn-secondary {
+    background: var(--card-bg);
+    color: var(--text-color);
+    border: 2px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* =========================================
+   结果面板
+   ========================================= */
+.results-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.result-card {
+    background: var(--bg-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+    border: 2px solid var(--border-color);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.result-card.rank-1 { border-color: var(--gold); }
+.result-card.rank-2 { border-color: var(--silver); }
+.result-card.rank-3 { border-color: var(--bronze); }
+
+.result-card .final-rank {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: white;
+}
+
+.result-card.rank-1 .final-rank { background: var(--gold); color: #333; }
+.result-card.rank-2 .final-rank { background: var(--silver); color: #333; }
+.result-card.rank-3 .final-rank { background: var(--bronze); }
+.result-card.rank-4 .final-rank { background: var(--rank-4); }
+.result-card.rank-5 .final-rank { background: var(--rank-5); }
+
+.result-card .player-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.result-card .total-points {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--text-color);
+    margin-bottom: 0.25rem;
+}
+
+.result-card .points-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* 每日明细 */
+.daily-breakdown {
+    margin-top: 1.5rem;
+}
+
+.breakdown-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+}
+
+.breakdown-table {
+    overflow-x: auto;
+}
+
+.breakdown-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.breakdown-table th,
+.breakdown-table td {
+    padding: 0.75rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.breakdown-table th {
+    background: var(--bg-color);
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.breakdown-table td {
+    color: var(--text-color);
+}
+
+.breakdown-table tr:hover td {
+    background: var(--bg-color);
+}
+
+/* =========================================
+   策略分析面板
+   ========================================= */
+.strategy-content {
+    display: grid;
+    gap: 1rem;
+}
+
+.strategy-item {
+    padding: 1rem;
+    background: var(--bg-color);
+    border-radius: 10px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.strategy-item.warning {
+    border-left-color: var(--warning);
+}
+
+.strategy-item.success {
+    border-left-color: var(--success);
+}
+
+.strategy-item .title {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.strategy-item .content {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* =========================================
+   响应式设计
+   ========================================= */
+@media (max-width: 768px) {
+    .calculator-header h1 {
+        font-size: 1.6rem;
+    }
+    
+    .players-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .results-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================================
+   动画效果
+   ========================================= */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.results-panel,
+.strategy-panel {
+    animation: fadeIn 0.4s ease;
+}
+
+.result-card {
+    animation: fadeIn 0.4s ease;
+    animation-fill-mode: both;
+}
+
+.result-card:nth-child(1) { animation-delay: 0.1s; }
+.result-card:nth-child(2) { animation-delay: 0.2s; }
+.result-card:nth-child(3) { animation-delay: 0.3s; }
+.result-card:nth-child(4) { animation-delay: 0.4s; }
+.result-card:nth-child(5) { animation-delay: 0.5s; }

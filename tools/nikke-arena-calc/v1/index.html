@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>竞技场积分计算器 - Web Tools</title>
+    
+    <link rel="stylesheet" href="../../../assets/css/global.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="../../../index.html" class="logo">🔙 返回工具箱</a>
+        
+        <div class="nav-links" style="display: flex; align-items: center;">
+            <span>竞技场积分计算器 v1.0</span>
+            
+            <button id="themeToggle" class="theme-toggle-btn" title="切换模式">
+                <span>🌞</span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <!-- 标题区域 -->
+        <div class="calculator-header">
+            <h1>🏆 竞技场积分计算器</h1>
+            <p class="subtitle">计算赛季积分，规划最优策略</p>
+        </div>
+
+        <!-- 基础设置 -->
+        <div class="settings-panel">
+            <div class="panel-title">
+                <span class="icon">⚙️</span>
+                <span>赛季设置</span>
+            </div>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label for="seasonDays">赛季天数</label>
+                    <input type="number" id="seasonDays" value="14" min="1" max="30">
+                </div>
+                <div class="setting-item">
+                    <label for="currentDay">当前第几天</label>
+                    <input type="number" id="currentDay" value="1" min="1" max="30">
+                </div>
+            </div>
+        </div>
+
+        <!-- 积分规则显示 -->
+        <div class="rules-panel">
+            <div class="panel-title">
+                <span class="icon">📊</span>
+                <span>排名积分规则</span>
+            </div>
+            <div class="rules-grid">
+                <div class="rule-item rank-1">
+                    <span class="rank-badge">1</span>
+                    <span class="points">600/H</span>
+                </div>
+                <div class="rule-item rank-2">
+                    <span class="rank-badge">2</span>
+                    <span class="points">595/H</span>
+                </div>
+                <div class="rule-item rank-3">
+                    <span class="rank-badge">3</span>
+                    <span class="points">590/H</span>
+                </div>
+                <div class="rule-item rank-4">
+                    <span class="rank-badge">4</span>
+                    <span class="points">585/H</span>
+                </div>
+                <div class="rule-item rank-5">
+                    <span class="rank-badge">5</span>
+                    <span class="points">580/H</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 玩家配置面板 -->
+        <div class="players-panel">
+            <div class="panel-title">
+                <span class="icon">👥</span>
+                <span>玩家配置</span>
+            </div>
+            
+            <div class="players-container" id="playersContainer">
+                <!-- 玩家卡片将由 JS 动态生成 -->
+            </div>
+        </div>
+
+        <!-- 计算按钮 -->
+        <div class="action-buttons">
+            <button class="btn btn-primary" id="calculateBtn">
+                <span>🧮</span> 开始计算
+            </button>
+            <button class="btn btn-secondary" id="resetBtn">
+                <span>🔄</span> 重置
+            </button>
+        </div>
+
+        <!-- 结果面板 -->
+        <div class="results-panel" id="resultsPanel" style="display: none;">
+            <div class="panel-title">
+                <span class="icon">📈</span>
+                <span>计算结果</span>
+            </div>
+            
+            <div class="results-container" id="resultsContainer">
+                <!-- 结果将由 JS 动态生成 -->
+            </div>
+
+            <!-- 每日明细 -->
+            <div class="daily-breakdown" id="dailyBreakdown">
+                <div class="breakdown-title">每日积分明细</div>
+                <div class="breakdown-table" id="breakdownTable">
+                    <!-- 表格将由 JS 动态生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 策略分析面板 -->
+        <div class="strategy-panel" id="strategyPanel" style="display: none;">
+            <div class="panel-title">
+                <span class="icon">💡</span>
+                <span>策略分析</span>
+            </div>
+            <div class="strategy-content" id="strategyContent">
+                <!-- 策略建议将由 JS 动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="../../../assets/js/main.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

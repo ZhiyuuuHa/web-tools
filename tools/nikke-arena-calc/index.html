@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>竞技场积分计算器 - Web Tools</title>
+    <link rel="stylesheet" href="../../assets/css/global.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="../../index.html" class="logo">🔙 返回工具箱</a>
+        <div class="nav-links" style="display: flex; align-items: center;">
+            <span>竞技场积分计算器 v2.0</span>
+            <button id="themeToggle" class="theme-toggle-btn" title="切换模式">
+                <span>🌞</span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="calculator-header">
+            <h1>🏆 竞技场积分计算器</h1>
+            <p class="subtitle">记录前5名玩家每日积分，追踪赛季排名</p>
+        </div>
+
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="current">📊 当前赛季</button>
+            <button class="tab-btn" data-tab="history">📚 历史赛季</button>
+            <button class="tab-btn" data-tab="settings">⚙️ 设置</button>
+        </div>
+
+        <!-- 当前赛季 -->
+        <div class="tab-content active" id="tab-current">
+            <!-- 赛季总览 -->
+            <div class="season-info-panel">
+                <div class="panel-title"><span class="icon">📅</span><span>赛季总览</span></div>
+                <div class="season-meta">
+                    <span id="currentSeasonName">未开始</span>
+                    <span id="recordedDays">0 / 14 天</span>
+                </div>
+                <div class="leaderboard" id="leaderboard"></div>
+            </div>
+
+            <!-- 每日数据录入 -->
+            <div class="daily-input-panel">
+                <div class="panel-title"><span class="icon">✏️</span><span>录入每日数据</span></div>
+                
+                <div class="day-selector">
+                    <label for="daySelect">选择天数：</label>
+                    <select id="daySelect"></select>
+                    <span class="day-status" id="dayStatus"></span>
+                </div>
+
+                <div class="players-input-grid" id="playersInputGrid"></div>
+
+                <div class="input-actions">
+                    <button class="btn btn-primary" id="saveDay"><span>💾</span> 保存本日记录</button>
+                    <button class="btn btn-secondary" id="clearDay"><span>🗑️</span> 清除本日</button>
+                </div>
+            </div>
+
+            <!-- 赛季详细记录 -->
+            <div class="records-panel">
+                <div class="panel-title"><span class="icon">📋</span><span>赛季详细记录</span></div>
+                <div class="records-table-wrapper">
+                    <table class="records-table" id="recordsTable">
+                        <thead id="recordsHead"></thead>
+                        <tbody id="recordsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="season-actions">
+                <button class="btn btn-warning" id="endSeason"><span>🏁</span> 结束赛季并归档</button>
+            </div>
+        </div>
+
+        <!-- 历史赛季 -->
+        <div class="tab-content" id="tab-history">
+            <div class="history-panel">
+                <div class="panel-title"><span class="icon">📚</span><span>历史赛季记录</span></div>
+                <div class="history-list" id="historyList"></div>
+            </div>
+        </div>
+
+        <!-- 设置 -->
+        <div class="tab-content" id="tab-settings">
+            <div class="settings-panel">
+                <div class="panel-title"><span class="icon">⚙️</span><span>赛季设置</span></div>
+                <div class="settings-form">
+                    <div class="setting-item">
+                        <label for="seasonName">赛季名称</label>
+                        <input type="text" id="seasonName" placeholder="例如：2025年1月第1期">
+                    </div>
+                    <div class="setting-item">
+                        <label for="seasonDays">赛季天数</label>
+                        <input type="number" id="seasonDays" value="14" min="1" max="30">
+                    </div>
+                    <div class="setting-item">
+                        <label>玩家名称（前5名）</label>
+                        <div class="player-names-grid">
+                            <input type="text" id="playerName1" placeholder="玩家1" value="玩家1">
+                            <input type="text" id="playerName2" placeholder="玩家2" value="玩家2">
+                            <input type="text" id="playerName3" placeholder="玩家3" value="玩家3">
+                            <input type="text" id="playerName4" placeholder="玩家4" value="玩家4">
+                            <input type="text" id="playerName5" placeholder="玩家5" value="玩家5">
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <button class="btn btn-primary" id="startNewSeason"><span>🚀</span> 开始新赛季</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-panel">
+                <div class="panel-title"><span class="icon">💾</span><span>数据管理</span></div>
+                <div class="data-actions">
+                    <button class="btn btn-secondary" id="exportData"><span>📤</span> 导出数据</button>
+                    <button class="btn btn-secondary" id="importData"><span>📥</span> 导入数据</button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                    <button class="btn btn-danger" id="clearAllData"><span>⚠️</span> 清除所有数据</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalSeasonName">赛季详情</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <script src="../../assets/js/main.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
