@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>派遣收益计算器</title>
+    <link rel="stylesheet" href="../../assets/css/global.css">
+    <style>
+        :root {
+            --primary-color: #2196f3;
+            --bg-color: #f2f2f2;
+        }
+
+        body {
+            font-family: -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 10px;
+            color: #333;
+        }
+
+        .calc-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: grid;
+            /* 调整为更紧凑的侧边栏比例 */
+            grid-template-columns: 1fr 260px;
+            gap: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .calc-container { grid-template-columns: 1fr; }
+            .result-panel { position: static; margin-top: 15px; }
+        }
+
+        /* === 极简网格布局 === */
+        .selection-area {
+            background: #fff;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .section-title { font-size: 0.95em; margin: 0; font-weight: bold; color: #444; }
+        .section-info { font-size: 0.75em; color: #888; background: #f5f5f5; padding: 2px 6px; border-radius: 4px; }
+
+        .items-grid {
+            display: grid;
+            /* 核心修改：宽度缩小至 72px */
+            grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        /* === 图标卡片设计 === */
+        .mini-card {
+            position: relative;
+            cursor: pointer;
+            text-align: center;
+            transition: transform 0.1s;
+            user-select: none; /* 防止双击选中文本 */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mini-card:active { transform: scale(0.95); }
+
+        /* 图片容器 */
+        .img-box {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto;
+            border-radius: 8px;
+            background: #f0f0f0;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        /* 选中态高亮 */
+        .mini-card.active .img-box { border-color: var(--primary-color); background: #e3f2fd; }
+        .mini-card.active.collection .img-box { border-color: #ff9800; background: #fff3e0; }
+
+        .item-img { width: 100%; height: 100%; object-fit: contain; }
+
+        /* 数量角标 (右上角) */
+        .count-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #f44336;
+            color: white;
+            font-size: 0.8em;
+            font-weight: bold;
+            min-width: 18px;
+            height: 18px;
+            line-height: 18px;
+            border-radius: 9px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 10;
+            display: none; /* 默认隐藏 */
+        }
+
+        /* 收益数值 (底部悬浮条) */
+        .value-tag {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            font-size: 0.65em;
+            padding: 2px 0;
+            text-align: center;
+        }
+
+        /* 物品名称 (底部微型文字) */
+        .mini-name {
+            font-size: 0.7em;
+            color: #666;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        /* 减号按钮 (左上角，仅当数量>0时显示) */
+        .minus-btn {
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            width: 18px;
+            height: 18px;
+            background: #9e9e9e;
+            color: white;
+            border-radius: 50%;
+            font-size: 14px;
+            line-height: 16px;
+            text-align: center;
+            display: none;
+            z-index: 10;
+        }
+        .minus-btn:hover { background: #616161; }
+
+        /* === 右侧面板 === */
+        .result-panel {
+            background: #fff;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 10px;
+            height: fit-content;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            background: #f1f8e9;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .data-row.main {
+            font-weight: bold;
+            color: #333;
+            border-top: 1px solid #eee;
+            padding-top: 6px;
+            margin-top: 6px;
+            font-size: 0.9em;
+        }
+
+        .result-box {
+            text-align: center;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            color: white;
+            display: none;
+        }
+        .res-good { background: #4caf50; }
+        .res-bad { background: #ef5350; }
+
+        .big-num { font-size: 1.8em; font-weight: bold; line-height: 1.1; }
+        .tips { font-size: 0.75em; opacity: 0.9; }
+
+        .reset-btn {
+            width: 100%;
+            background: #eee;
+            border: none;
+            padding: 8px;
+            border-radius: 4px;
+            color: #555;
+            font-size: 0.8em;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .reset-btn:hover { background: #e0e0e0; }
+
+        /* 数量超标警告 */
+        .limit-warn {
+            color: #ff9800; font-size: 0.75em; text-align: center;
+            margin-top: 5px; display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="calc-container">
+    <div class="selection-area">
+        <div class="section-header">
+            <h3 class="section-title">📦 收藏品</h3>
+            <span class="section-info">期望: <span id="exp-col">56.6</span></span>
+        </div>
+        <div class="items-grid" id="grid-col"></div>
+
+        <div class="section-header">
+            <h3 class="section-title">💎 普通物品</h3>
+            <span class="section-info">期望: 19.7</span>
+        </div>
+        <div class="items-grid" id="grid-ord"></div>
+    </div>
+
+    <div class="result-panel">
+        <label class="toggle-row">
+            <input type="checkbox" id="mode-348" style="margin-right:8px;">
+            <div>
+                <div style="font-weight:bold; color:#2e7d32;">348 礼包</div>
+                <div style="font-size:0.85em; color:#558b2f;">购买技能书348礼包</div>
+            </div>
+        </label>
+
+        <div class="data-row"><span>数量:</span> <span id="count-disp">0/5</span></div>
+        <div class="data-row"><span>当前价值:</span> <span id="cur-val">0.0</span></div>
+        <div class="data-row"><span>未来期望:</span> <span id="fut-val" style="color:#2196f3">0.0</span></div>
+        <div class="data-row"><span>刷新成本:</span> <span>-50.0</span></div>
+
+        <div id="res-card" class="result-box">
+            <div class="tips" id="advice-text">建议</div>
+            <div class="big-num" id="net-gain">0</div>
+            <div class="tips">净收益</div>
+        </div>
+
+        <div id="warn-msg" class="limit-warn">⚠️ 超过5个物品</div>
+
+        <button class="reset-btn" onclick="resetAll()">重置 (清零)</button>
+
+        <div style="margin-top:15px; font-size:0.7em; color:#999; text-align:center;">
+            点击图标 +1<br>点击红色减号 -1
+        </div>
+    </div>
+</div>
+
+<script>
+    const CONSTANTS = {
+        EV_ORDINARY: 19.65,
+        EV_COLL_NORM: 56.6,
+        EV_COLL_348: 141.6,
+        REFRESH_COST: 50
+    };
+
+    // 数据源：请确保 images/ 下有对应的图片文件
+    const DB = {
+        col: [
+            { n:"2金", v:201.7, v2:504.0 },
+            { n:"3紫", v:136.6, v2:341.3 },
+            { n:"1金", v:100.8, v2:252.0 },
+            { n:"2金箱", v:152.5, v2:381.1 },
+            { n:"2紫", v:91.1, v2:227.6 },
+            { n:"1金箱", v:76.3, v2:190.6 },
+            { n:"2紫箱", v:67.1, v2:167.8 },
+            { n:"3蓝", v:41.1, v2:102.7 },
+            { n:"60积分", v:42.0, v2:104.9 },
+            { n:"1紫箱", v:45.5, v2:113.8 },
+            { n:"2蓝", v:27.4, v2:68.5 },
+            { n:"40积分", v:22.5, v2:56.2 },
+            { n:"30积分", v:16.9, v2:42.1 },
+            { n:"20积分", v:11.2, v2:28.1 }
+        ],
+        ord: [
+            { n:'3红球', v:120 },
+            { n:"2红球", v:80 },
+            { n:"3信用点", v:45 },
+            { n:"30钻", v:30 },
+            { n:"2信用点", v:30 },
+            { n:"25钻", v:25 },
+            { n:"20钻", v:20 },
+            { n:"15钻", v:15 },
+            { n:"其他 (0收益)", v:0, img:"trash.png" }
+        ]
+    };
+
+    let state = {
+        counts: {}, // Map: name -> int
+        is348: false
+    };
+
+    function init() {
+        renderGrid(DB.col, 'grid-col', 'collection');
+        renderGrid(DB.ord, 'grid-ord', 'ordinary');
+
+        document.getElementById('mode-348').addEventListener('change', e => {
+            state.is348 = e.target.checked;
+            updateDisplayValues();
+            calc();
+        });
+    }
+
+    function renderGrid(items, elId, type) {
+        const el = document.getElementById(elId);
+        items.forEach(item => {
+            state.counts[item.n] = 0;
+
+            // 尝试图片路径：有img属性用img，否则用name.png
+            const imgSrc = `images/${item.img || item.n + '.png'}`;
+            // 初始显示数值
+            const val = (type === 'collection' && !state.is348) ? item.v : (type === 'collection' ? item.v2 : item.v);
+
+            const div = document.createElement('div');
+            div.className = `mini-card ${type}`;
+            div.id = `card-${item.n}`;
+            div.onclick = (e) => {
+                // 如果点击的是减号，阻止冒泡
+                if(e.target.className.includes('minus-btn')) return;
+                changeQty(item.n, 1);
+            };
+
+            div.innerHTML = `
+                <div class="minus-btn" onclick="changeQty('${item.n}', -1); event.stopPropagation();">−</div>
+                <div class="count-badge" id="badge-${item.n}">0</div>
+                <div class="img-box">
+                    <img src="${imgSrc}" class="item-img" onerror="this.style.display='none'">
+                    <div class="value-tag" id="val-${item.n}">${val.toFixed(0)}</div>
+                </div>
+                <div class="mini-name">${item.n}</div>
+            `;
+            el.appendChild(div);
+        });
+    }
+
+    function changeQty(name, delta) {
+        let n = state.counts[name] + delta;
+        if(n < 0) n = 0;
+        if(n > 5) n = 5; // 软限制
+        state.counts[name] = n;
+
+        // UI Update
+        const card = document.getElementById(`card-${name}`);
+        const badge = document.getElementById(`badge-${name}`);
+        const minus = card.querySelector('.minus-btn');
+
+        badge.innerText = n;
+        if(n > 0) {
+            badge.style.display = 'block';
+            minus.style.display = 'block';
+            card.classList.add('active');
+        } else {
+            badge.style.display = 'none';
+            minus.style.display = 'none';
+            card.classList.remove('active');
+        }
+
+        calc();
+    }
+
+    function updateDisplayValues() {
+        const exp = state.is348 ? CONSTANTS.EV_COLL_348 : CONSTANTS.EV_COLL_NORM;
+        document.getElementById('exp-col').innerText = exp.toFixed(1);
+
+        DB.col.forEach(item => {
+            const v = state.is348 ? item.v2 : item.v;
+            document.getElementById(`val-${item.n}`).innerText = v.toFixed(0);
+        });
+    }
+
+    function calc() {
+        let cOrd = 0, cCol = 0, curVal = 0;
+
+        // 计算普通
+        DB.ord.forEach(i => {
+            const n = state.counts[i.n];
+            if(n>0) { cOrd += n; curVal += i.v * n; }
+        });
+        // 计算收藏
+        DB.col.forEach(i => {
+            const n = state.counts[i.n];
+            if(n>0) {
+                cCol += n;
+                curVal += (state.is348 ? i.v2 : i.v) * n;
+            }
+        });
+
+        const total = cOrd + cCol;
+        const expCol = state.is348 ? CONSTANTS.EV_COLL_348 : CONSTANTS.EV_COLL_NORM;
+        const futVal = (cOrd * CONSTANTS.EV_ORDINARY) + (cCol * expCol);
+        const net = futVal - curVal - CONSTANTS.REFRESH_COST;
+
+        // Render UI
+        document.getElementById('count-disp').innerText = `${total}/5`;
+        document.getElementById('cur-val').innerText = curVal.toFixed(1);
+        document.getElementById('fut-val').innerText = futVal.toFixed(1);
+        document.getElementById('warn-msg').style.display = total > 5 ? 'block' : 'none';
+
+        const resCard = document.getElementById('res-card');
+        if(total > 0) {
+            resCard.style.display = 'block';
+            document.getElementById('net-gain').innerText = (net>0 ? "+":"") + net.toFixed(0);
+
+            if(net > 0) {
+                resCard.className = 'result-box res-good';
+                document.getElementById('advice-text').innerText = '建议刷新 ✅';
+            } else {
+                resCard.className = 'result-box res-bad';
+                document.getElementById('advice-text').innerText = '建议保留 ❌';
+            }
+        } else {
+            resCard.style.display = 'none';
+        }
+    }
+
+    function resetAll() {
+        for(let k in state.counts) state.counts[k] = 0;
+        document.querySelectorAll('.count-badge').forEach(e => e.style.display = 'none');
+        document.querySelectorAll('.minus-btn').forEach(e => e.style.display = 'none');
+        document.querySelectorAll('.mini-card').forEach(e => e.classList.remove('active'));
+        calc();
+    }
+
+    init();
+</script>
+
+</body>
+</html>
