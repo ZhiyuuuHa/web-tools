@@ -261,7 +261,7 @@
             <div class="tips">净收益</div>
         </div>
 
-        <div id="warn-msg" class="limit-warn">⚠️ 超过5个物品</div>
+        <div id="warn-msg" class="limit-warn">⚠️ 超过15个物品</div>
 
         <button class="reset-btn" onclick="resetAll()">重置 (清零)</button>
 
@@ -361,7 +361,7 @@
     function changeQty(name, delta) {
         let n = state.counts[name] + delta;
         if(n < 0) n = 0;
-        if(n > 5) n = 5; // 软限制
+        // if(n > 15) n = 15;
         state.counts[name] = n;
 
         // UI Update
@@ -419,7 +419,7 @@
         document.getElementById('count-disp').innerText = `${total}/5`;
         document.getElementById('cur-val').innerText = curVal.toFixed(1);
         document.getElementById('fut-val').innerText = futVal.toFixed(1);
-        document.getElementById('warn-msg').style.display = total > 5 ? 'block' : 'none';
+        document.getElementById('warn-msg').style.display = total > 15 ? 'block' : 'none';
 
         const resCard = document.getElementById('res-card');
         if(total > 0) {
