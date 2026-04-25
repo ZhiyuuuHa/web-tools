@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>芯尘策略计算器</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <div class="hero-title-row">
+          <h1>芯尘策略计算器</h1>
+          <a
+            class="source-badge"
+            href="https://nikkeoutpost.netlify.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="数据来源引用：NIKKE Outpost"
+          >
+            数据引用：NIKKE Outpost
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <div class="sticky-toolbar-shell">
+      <section class="sticky-toolbar">
+        <div class="toolbar-actions">
+          <button id="run-btn" class="primary-btn" type="button">重新计算</button>
+          <button id="export-csv-btn" class="ghost-btn" type="button">导出当前明细 CSV</button>
+          <button id="export-png-btn" class="ghost-btn" type="button">导出图表 PNG</button>
+        </div>
+        <div class="toolbar-status">
+          <div class="status-pill compact">
+            <span class="status-label">状态</span>
+            <strong id="status-text">等待计算</strong>
+          </div>
+          <div class="status-pill compact">
+            <span class="status-label">当前最佳策略</span>
+            <strong id="best-strategy-text">--</strong>
+          </div>
+          <div class="status-pill compact">
+            <span class="status-label">当前最高等级</span>
+            <strong id="current-level-text">--</strong>
+          </div>
+          <div class="status-pill compact">
+            <span class="status-label">最终等级</span>
+            <strong id="final-level-text">--</strong>
+          </div>
+          <div class="status-pill compact">
+            <span class="status-label">策略数</span>
+            <strong id="strategy-count-text">--</strong>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="metrics-grid" id="metrics-grid"></section>
+
+    <div class="layout-shell">
+      <main class="sections">
+      <section class="section-card collapsible is-open" id="section-params" data-nav-label="基础参数">
+        <button class="collapse-toggle" type="button">
+          <span class="collapse-copy">
+            <span class="section-title">基础参数</span>
+            <span class="section-desc">每日小时数按基础 24 小时 + 免费扫荡 + 购买扫荡自动计算。</span>
+          </span>
+          <span class="collapse-icon">−</span>
+        </button>
+        <div class="collapse-body">
+          <div id="params-form" class="form-grid"></div>
+        </div>
+      </section>
+
+      <section class="section-card collapsible is-open" id="section-mainlines" data-nav-label="主线更新">
+        <button class="collapse-toggle" type="button">
+          <span class="collapse-copy">
+            <span class="section-title">主线更新</span>
+            <span class="section-desc">默认每次更新主线芯尘获取量 +2.5，可按实际情况自行修改。</span>
+          </span>
+          <span class="collapse-icon">−</span>
+        </button>
+        <div class="collapse-body">
+          <div class="section-toolbar">
+            <button data-add="mainlines" class="small-btn" type="button">新增主线更新</button>
+          </div>
+          <div class="mainline-panel">
+            <div id="mainline-timeline-chart" class="mainline-chart"></div>
+            <div id="mainline-editor" class="mainline-editor"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-card collapsible is-open" id="section-events" data-nav-label="活动">
+        <button class="collapse-toggle" type="button">
+          <span class="collapse-copy">
+            <span class="section-title">活动</span>
+          </span>
+          <span class="collapse-icon">−</span>
+        </button>
+        <div class="collapse-body">
+          <div class="section-toolbar">
+            <button data-add="events" class="small-btn" type="button">新增活动</button>
+          </div>
+          <div id="events-list" class="timeline-list"></div>
+        </div>
+      </section>
+
+      <section class="section-card collapsible is-open" id="section-extras" data-nav-label="额外来源">
+        <button class="collapse-toggle" type="button">
+          <span class="collapse-copy">
+            <span class="section-title">额外来源 / 日常获取</span>
+            <span class="section-desc">支持每日、每周、每月和一次性来源。</span>
+          </span>
+          <span class="collapse-icon">−</span>
+        </button>
+        <div class="collapse-body">
+          <div class="section-toolbar">
+            <button data-add="extras" class="small-btn" type="button">新增来源</button>
+          </div>
+          <div id="extras-list" class="editor-list"></div>
+        </div>
+      </section>
+
+      <section class="section-card collapsible is-open" id="section-charts" data-nav-label="策略图表">
+        <button class="collapse-toggle" type="button">
+          <span class="collapse-copy">
+            <span class="section-title">策略图表</span>
+            <span class="section-desc">默认展示所有启用策略，鼠标移动到图表上时会实时显示当前天数下各策略的等级值。</span>
+          </span>
+          <span class="collapse-icon">−</span>
+        </button>
+        <div class="collapse-body">
+          <div id="line-chart" class="chart-box tall"></div>
+          <div id="bar-chart" class="chart-box"></div>
+          <div class="embedded-summary" hidden>
+            <div class="subsection-head">
+              <h3>策略汇总</h3>
+              <p>按最终等级排序，点击某一行可切换每日明细。</p>
+            </div>
+            <div class="table-wrap sticky-head-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>策略</th>
+                    <th>类型</th>
+                    <th>最终等级</th>
+                    <th>剩余箱子</th>
+                    <th>累计开箱</th>
+                  </tr>
+                </thead>
+                <tbody id="summary-body-old"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-card collapsible is-open" id="section-summary" data-nav-label="策略汇总">
+        <button class="collapse-toggle" type="button">
+          <span class="collapse-copy">
+            <span class="section-title">策略汇总</span>
+            <span class="section-desc">按最终等级排序，点击某一行可切换每日明细。</span>
+          </span>
+          <span class="collapse-icon">−</span>
+        </button>
+        <div class="collapse-body">
+          <div class="table-wrap sticky-head-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>策略</th>
+                  <th>类型</th>
+                  <th>最终等级</th>
+                  <th>剩余箱子</th>
+                  <th>累计开箱</th>
+                </tr>
+              </thead>
+              <tbody id="summary-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-card collapsible is-open" id="section-detail" data-nav-label="每日明细">
+        <button class="collapse-toggle" type="button">
+          <span class="collapse-copy">
+            <span class="section-title">每日明细</span>
+            <span class="section-desc">在这里选择需要查看明细的策略。</span>
+          </span>
+          <span class="collapse-icon">−</span>
+        </button>
+        <div class="collapse-body">
+          <div class="detail-toolbar">
+            <label class="field detail-field">
+              <span>每日明细策略</span>
+              <select id="detail-strategy-select"></select>
+            </label>
+          </div>
+          <div class="table-wrap detail-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>天数</th>
+                  <th>等级</th>
+                  <th>级内进度</th>
+                  <th>下一级芯尘</th>
+                  <th>小时量</th>
+                  <th>箱子</th>
+                  <th>当日开箱</th>
+                  <th>日常芯尘</th>
+                  <th>额外芯尘</th>
+                  <th>说明</th>
+                </tr>
+              </thead>
+              <tbody id="detail-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-card collapsible" id="section-strategies" data-nav-label="策略">
+        <button class="collapse-toggle" type="button">
+          <span class="collapse-copy">
+            <span class="section-title">策略</span>
+            <span class="section-desc">在这里编辑策略，并查看最终策略汇总。</span>
+          </span>
+          <span class="collapse-icon">+</span>
+        </button>
+        <div class="collapse-body">
+          <div class="section-toolbar">
+            <button data-add="strategies" class="small-btn" type="button">新增策略</button>
+          </div>
+          <div id="strategies-list" class="editor-list"></div>
+          <div class="embedded-summary" hidden>
+            <div class="subsection-head">
+              <h3>策略汇总</h3>
+              <p>按最终等级排序，点击某一行可切换每日明细。</p>
+            </div>
+            <div class="table-wrap sticky-head-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>策略</th>
+                    <th>类型</th>
+                    <th>最终等级</th>
+                    <th>剩余箱子</th>
+                    <th>累计开箱</th>
+                  </tr>
+                </thead>
+                <tbody id="summary-body-old"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-card collapsible" id="section-reference" data-nav-label="芯尘参考">
+        <button class="collapse-toggle" type="button">
+          <span class="collapse-copy">
+            <span class="section-title">芯尘消耗参考</span>
+            <span class="section-desc">展示 200 级以上的每级芯尘消耗区间，模拟器内部仍按完整规则计算。</span>
+          </span>
+          <span class="collapse-icon">+</span>
+        </button>
+        <div class="collapse-body">
+          <div class="reference-card">
+            <h3>200+ 区间每级消耗</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>等级区间</th>
+                    <th>每级芯尘</th>
+                  </tr>
+                </thead>
+                <tbody id="dust-range-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+      </main>
+
+      <aside class="page-nav-shell">
+        <nav class="page-nav" id="page-nav">
+          <div id="page-nav-list" class="page-nav-list"></div>
+        </nav>
+      </aside>
+    </div>
+  </div>
+
+  <script src="./nikke-data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
