@@ -74,7 +74,6 @@
 - `startBoxes`
 - `simulateDays`
 - `paidSweeps`
-- `bigRateBonus`
 - `startDate`
 
 补充：

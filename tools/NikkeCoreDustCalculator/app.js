@@ -34,6 +34,7 @@ const ACTIVITY_EDITOR_MODES = {
 const FIXED_BASE_DAILY_HOURS = 24;
 const FIXED_FREE_SWEEPS = 1;
 const FIXED_HOURS_PER_SWEEP = 2;
+const FIXED_MAINLINE_IMMEDIATE_BONUS = 2;
 const FIXED_FIRST_BIG_LEVEL = 381;
 const FIXED_BIG_INTERVAL = 20;
 const DEFAULT_START_DATE = new Date().toISOString().slice(0, 10);
@@ -164,7 +165,6 @@ const state = {
     currentMainlineChapter: "",
     simulateDays: 300,
     paidSweeps: 2,
-    bigRateBonus: 1.5,
     startDate: DEFAULT_START_DATE,
     endDate: offsetDateString(DEFAULT_START_DATE, 300),
   },
@@ -541,14 +541,26 @@ function getCoreDustCostForNextLevel(currentLevel) {
   return range ? range.cost : 0;
 }
 
-function milestoneCount(level) {
-  const normalizedLevel = toFiniteNumber(level, 0);
-  if (normalizedLevel < FIXED_FIRST_BIG_LEVEL) return 0;
-  return Math.floor((normalizedLevel - FIXED_FIRST_BIG_LEVEL) / FIXED_BIG_INTERVAL) + 1;
+function computeBaseHourlyRate(mainlineBonus) {
+  return toFiniteNumber(state.params.startHourlyRate, 0) + mainlineBonus;
 }
 
-function computeBaseHourlyRate(level, mainlineBonus) {
-  return toFiniteNumber(state.params.startHourlyRate, 0) + mainlineBonus + milestoneCount(level) * state.params.bigRateBonus;
+function immediateMainlineBonus(update) {
+  const totalBonus = Math.max(0, Number(update?.rateBonus || 0));
+  if (update?.gateLevel == null) return totalBonus;
+  return Math.min(FIXED_MAINLINE_IMMEDIATE_BONUS, totalBonus);
+}
+
+function gatedMainlineUpdate(update) {
+  if (update?.gateLevel == null) return null;
+  const totalBonus = Math.max(0, Number(update.rateBonus || 0));
+  const gatedBonus = Math.max(0, totalBonus - FIXED_MAINLINE_IMMEDIATE_BONUS);
+  if (gatedBonus <= 0) return null;
+  return {
+    ...update,
+    gateLevel: Number(update.gateLevel),
+    rateBonus: gatedBonus,
+  };
 }
 
 function normalizeLevelProgress(level, progress) {
@@ -677,7 +689,8 @@ function simulate(strategy) {
     boxes += activityBoxes;
 
     const releasedToday = mainlineByDay.get(day) || [];
-    pendingMainlines = pendingMainlines.concat(releasedToday);
+    mainlineBonus += releasedToday.reduce((sum, update) => sum + immediateMainlineBonus(update), 0);
+    pendingMainlines = pendingMainlines.concat(releasedToday.map(gatedMainlineUpdate).filter(Boolean));
     releasedUpdatesCount += releasedToday.length;
 
     const preDayActivation = activateAvailableMainlines(pendingMainlines, level);
@@ -686,7 +699,7 @@ function simulate(strategy) {
 
     let pendingInfo = pendingGateInfo(pendingMainlines);
     let activeGateLevel = pendingInfo.gateLevel;
-    let hourlyRate = computeBaseHourlyRate(level, mainlineBonus);
+    let hourlyRate = computeBaseHourlyRate(mainlineBonus);
     const currentBoxRate = hourlyRate;
     const isGateDay = (mainlineByDay.get(day) || []).some((update) => update.gateLevel != null);
 
@@ -743,12 +756,47 @@ function simulate(strategy) {
         strategyNote = `补到大档 ${milestoneLevel}`;
       }
     } else if (strategy.type === "NO_BOX" && day === state.params.simulateDays && boxes > 0) {
-      const result = openBoxes(progressDust, boxes, boxes, currentBoxRate);
-      progressDust = result.progressDust;
-      boxes = result.boxes;
-      openedBoxesToday += result.actual;
-      dustFromBoxesToday += result.gainedDust;
-      strategyNote = "最后一天全开";
+      const noBoxNotes = ["最后一天全开"];
+      let stagedBoxRate = currentBoxRate;
+      let stagedPendingInfo = pendingInfo;
+      let blockedGateLevel = null;
+
+      while (boxes > 0 && stagedPendingInfo.gateLevel != null) {
+        const gateLevel = Number(stagedPendingInfo.gateLevel);
+        const needBoxes = boxesNeededForTargetLevel(gateLevel, level, progressDust, stagedBoxRate);
+        if (needBoxes <= 0) break;
+        if (needBoxes > boxes) {
+          blockedGateLevel = gateLevel;
+          break;
+        }
+
+        const gateResult = openBoxes(progressDust, boxes, needBoxes, stagedBoxRate);
+        progressDust = gateResult.progressDust;
+        boxes = gateResult.boxes;
+        openedBoxesToday += gateResult.actual;
+        dustFromBoxesToday += gateResult.gainedDust;
+        noBoxNotes.push(`补到同步器 ${gateLevel}`);
+
+        ({ level, progress: progressDust } = normalizeLevelProgress(level, progressDust));
+        const gateActivation = activateAvailableMainlines(pendingMainlines, level);
+        if (gateActivation.gainedBonus > 0) {
+          mainlineBonus += gateActivation.gainedBonus;
+          noBoxNotes.push(`解锁章节加成 +${gateActivation.gainedBonus.toFixed(2)}`);
+        }
+        pendingMainlines = gateActivation.remaining;
+        stagedPendingInfo = pendingGateInfo(pendingMainlines);
+        stagedBoxRate = computeBaseHourlyRate(mainlineBonus);
+      }
+
+      if (boxes > 0) {
+        const finalResult = openBoxes(progressDust, boxes, boxes, stagedBoxRate);
+        progressDust = finalResult.progressDust;
+        boxes = finalResult.boxes;
+        openedBoxesToday += finalResult.actual;
+        dustFromBoxesToday += finalResult.gainedDust;
+      }
+      if (blockedGateLevel != null) noBoxNotes.push(`未达同步器 ${blockedGateLevel}`);
+      strategyNote = noBoxNotes.join(" | ");
     }
 
     ({ level, progress: progressDust } = normalizeLevelProgress(level, progressDust));
@@ -761,7 +809,7 @@ function simulate(strategy) {
     pendingInfo = pendingGateInfo(pendingMainlines);
     activeGateLevel = pendingInfo.gateLevel;
 
-    hourlyRate = computeBaseHourlyRate(level, mainlineBonus);
+    hourlyRate = computeBaseHourlyRate(mainlineBonus);
 
     const dailyDust = hourlyRate * dailyHours();
     const extraDust = activeExtras.reduce((sum, extra) => {
@@ -1184,6 +1232,9 @@ function renderMainlineModal() {
           <input id="mainline-modal-rate" class="field-control" type="number" step="0.1" value="${current.rateBonus}">
         </label>
         <label class="field col-number col-inline-half">
+          <span class="field-label">需要同步器</span>
+          <input id="mainline-modal-gate" class="field-control" type="number" step="1" min="1" placeholder="none = no gate" value="${current.gateLevel ?? ""}">
+        </label>
       </div>
       <div class="mainline-modal-actions">
         <button class="ghost-btn danger-btn" type="button" id="mainline-modal-delete">删除节点</button>
@@ -1208,6 +1259,9 @@ function renderMainlineModal() {
   }, { eventName: "change", rerender: true });
   bindValue("mainline-modal-rate", (value) => {
     current.rateBonus = Number(value || 0);
+  }, { eventName: "change", rerender: true });
+  bindValue("mainline-modal-gate", (value) => {
+    current.gateLevel = parseOptionalInt(value);
   }, { eventName: "change", rerender: true });
   mainlineModalRoot.querySelectorAll('[data-close="modal"]').forEach((node) => {
     node.addEventListener("click", closeMainlineModal);
@@ -1289,7 +1343,10 @@ function renderMainlineTimeline() {
       formatter: (params) => {
         const item = entries.find((entry) => entry.index === params.data.originalIndex);
         if (!item) return "";
-        return `${item.label}<br>${item.date}<br>芯尘获取增加：${item.rateBonus}`;
+        const immediateBonus = immediateMainlineBonus(item);
+        const gatedBonus = Math.max(0, Number(item.rateBonus || 0) - immediateBonus);
+        const gateText = gatedBonus > 0 ? `${item.gateLevel ?? "无"} / 额外 +${gatedBonus.toFixed(2)}` : "无";
+        return `${item.label}<br>${item.date}<br>芯尘获取增加：${Number(item.rateBonus || 0).toFixed(2)}<br>日期直给：${immediateBonus.toFixed(2)}<br>需要同步器：${gateText}`;
       },
     },
     xAxis: {
@@ -1397,7 +1454,7 @@ function renderMainlineTimeline() {
 function renderTimelineRows(listId, rows, rowType, onDelete) {
   const host = document.getElementById(listId);
   host.innerHTML = "";
-  renderListHeader(host, "timeline-grid", rowType === "mainline" ? ["更新时间", "芯尘获取增加"] : ["开始日期", "持续天数", "获得箱子"]);
+  renderListHeader(host, "timeline-grid", rowType === "mainline" ? ["更新时间", "芯尘获取增加", "需要同步器"] : ["开始日期", "持续天数", "获得箱子"]);
   rows.forEach((row, index) => {
     const card = document.createElement("div");
     card.className = `timeline-card ${rowType}`;
@@ -1407,6 +1464,7 @@ function renderTimelineRows(listId, rows, rowType, onDelete) {
     if (rowType === "mainline") {
       compactGrid.appendChild(createCompactField(row.date, (value) => { row.date = value; }, { type: "date", ariaLabel: "主线更新时间", title: "主线更新时间", compactClass: "is-date", columnClass: "col-date" }));
       compactGrid.appendChild(createCompactField(row.rateBonus, (value) => { row.rateBonus = value; }, { type: "number", cast: "number", step: "0.1", placeholder: "增加", ariaLabel: "芯尘获取增加", title: "芯尘获取增加", compactClass: "is-short", columnClass: "col-number" }));
+      compactGrid.appendChild(createCompactField(row.gateLevel ?? "", (value) => { row.gateLevel = value; }, { type: "number", cast: "optionalInt", step: "1", placeholder: "sync", ariaLabel: "required sync level", title: "required sync level", compactClass: "is-short", columnClass: "col-gate" }));
     } else {
       compactGrid.appendChild(createCompactField(row.startDate, (value) => { row.startDate = value; }, { type: "date", ariaLabel: "活动开始日期", title: "活动开始日期", compactClass: "is-date", columnClass: "col-date" }));
       compactGrid.appendChild(createCompactField(row.durationDays, (value) => { row.durationDays = value; }, { type: "number", cast: "number", step: "1", placeholder: "天数", ariaLabel: "活动持续天数", title: "活动持续天数", compactClass: "is-short", columnClass: "col-number" }));
