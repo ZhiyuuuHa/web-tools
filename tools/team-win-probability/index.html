@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CJJC胜率计算器：自定义双方五名成员的对阵胜率，精确计算随机出战顺序下的五局三胜团队获胜概率。">
+    <title>CJJC胜率计算器 - Web Tools</title>
+    <link rel="stylesheet" href="../../assets/css/global.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="../../index.html" class="logo">← 返回工具箱</a>
+        <div class="nav-links">
+            <span>CJJC胜率计算器</span>
+            <button id="themeToggle" class="theme-toggle-btn" type="button" title="切换深色/浅色模式">
+                <span>🌞</span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="main-container calculator-page">
+        <header class="hero">
+            <div>
+                <p class="eyebrow">RANDOM LINEUP · BEST OF FIVE</p>
+                <h1>CJJC胜率计算器</h1>
+                <p class="hero-description">
+                    双方五名成员的出战顺序均为随机。填写红队成员战胜蓝队成员的概率，计算红队在五局三胜制中最终获胜的精确概率。
+                </p>
+            </div>
+            <div class="rule-chip" aria-label="比赛规则">
+                <span>5 × 5</span>
+                <small>随机配对 · 先赢 3 局</small>
+            </div>
+        </header>
+
+        <section class="workspace" aria-labelledby="matrixTitle">
+            <div class="section-heading">
+                <div>
+                    <p class="step-label">步骤 1</p>
+                    <h2 id="matrixTitle">设置对阵胜率</h2>
+                    <p>成员名和 25 个胜率都可以修改；数值请按百分比填写。</p>
+                </div>
+                <div class="preset-actions">
+                    <button id="equalButton" class="button button-ghost" type="button">全部设为 50%</button>
+                </div>
+            </div>
+
+            <div class="matrix-legend" aria-hidden="true">
+                <span class="legend-red">红队进攻方 ↓</span>
+                <span class="legend-blue">蓝队对手 →</span>
+            </div>
+
+            <div class="table-scroll" tabindex="0" aria-label="对阵胜率矩阵，可横向滚动">
+                <table class="probability-matrix">
+                    <thead>
+                        <tr id="blueHeaders">
+                            <th class="corner-cell" scope="col">红队 \ 蓝队</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matrixBody"></tbody>
+                </table>
+            </div>
+
+            <div class="calculate-row">
+                <p class="input-hint">例如 95 表示该红队成员有 95% 的概率赢下这局。</p>
+                <button id="calculateButton" class="button button-primary" type="button">计算红队获胜概率</button>
+            </div>
+        </section>
+
+        <section id="resultPanel" class="result-panel" aria-labelledby="resultTitle" aria-live="polite">
+            <div class="result-primary">
+                <p class="step-label">计算结果</p>
+                <h2 id="resultTitle">红队最终获胜概率</h2>
+                <strong id="resultValue" class="result-value">—</strong>
+                <p id="errorMessage" class="error-message" role="alert"></p>
+            </div>
+
+            <dl class="result-details">
+                <div>
+                    <dt>蓝队最终获胜概率</dt>
+                    <dd id="blueResultValue">—</dd>
+                </div>
+                <div>
+                    <dt>完整五局的期望胜局</dt>
+                    <dd id="expectedWinsValue">—</dd>
+                </div>
+                <div>
+                    <dt>枚举的随机配对</dt>
+                    <dd id="matchupCountValue">—</dd>
+                </div>
+                <div>
+                    <dt>不同配对下的胜率范围</dt>
+                    <dd id="probabilityRangeValue">—</dd>
+                </div>
+            </dl>
+        </section>
+
+        <section class="method-card" aria-labelledby="methodTitle">
+            <p class="step-label">计算说明</p>
+            <h2 id="methodTitle">结果如何得出？</h2>
+            <ol>
+                <li>双方各自随机排序，等价于在红蓝队之间随机产生一种一对一配对，共有 5! = 120 种。</li>
+                <li>对每一种配对，按五局各自的胜率计算红队至少赢 3 局的概率。</li>
+                <li>将 120 种配对的结果等权平均，得到最终概率；这是精确枚举，不是随机模拟。</li>
+            </ol>
+            <p class="assumption">计算假设：给定出战成员后，各局比赛结果相互独立，且双方所有出战顺序等概率出现。</p>
+        </section>
+    </main>
+
+    <script src="../../assets/js/main.js"></script>
+    <script src="calculator.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
