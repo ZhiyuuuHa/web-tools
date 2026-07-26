@@ -14,6 +14,7 @@
     const expectedWinsValue = document.getElementById('expectedWinsValue');
     const matchupCountValue = document.getElementById('matchupCountValue');
     const probabilityRangeValue = document.getElementById('probabilityRangeValue');
+    const winDistribution = document.getElementById('winDistribution');
     const errorMessage = document.getElementById('errorMessage');
     const calculateButton = document.getElementById('calculateButton');
     const equalButton = document.getElementById('equalButton');
@@ -127,6 +128,45 @@
         return (probability * 100).toFixed(4) + '%';
     }
 
+    function buildWinDistribution() {
+        for (let wins = 0; wins <= TEAM_SIZE; wins += 1) {
+            const item = document.createElement('div');
+            item.className = 'distribution-item';
+            item.dataset.wins = String(wins);
+
+            const label = document.createElement('div');
+            label.className = 'distribution-label';
+
+            const name = document.createElement('span');
+            name.textContent = '赢 ' + wins + ' 局';
+
+            const value = document.createElement('strong');
+            value.textContent = '—';
+
+            const track = document.createElement('div');
+            track.className = 'distribution-track';
+            track.setAttribute('aria-hidden', 'true');
+
+            const bar = document.createElement('span');
+            bar.className = 'distribution-bar';
+
+            label.appendChild(name);
+            label.appendChild(value);
+            track.appendChild(bar);
+            item.appendChild(label);
+            item.appendChild(track);
+            winDistribution.appendChild(item);
+        }
+    }
+
+    function updateWinDistribution(distribution) {
+        document.querySelectorAll('.distribution-item').forEach(function (item) {
+            const probability = distribution[Number(item.dataset.wins)];
+            item.querySelector('strong').textContent = formatPercent(probability);
+            item.querySelector('.distribution-bar').style.width = (probability * 100) + '%';
+        });
+    }
+
     function calculate() {
         try {
             const matrix = readMatrix();
@@ -138,6 +178,7 @@
             matchupCountValue.textContent = result.matchupCount + ' 种';
             probabilityRangeValue.textContent =
                 formatPercent(result.minMatchupProbability) + ' ～ ' + formatPercent(result.maxMatchupProbability);
+            updateWinDistribution(result.winDistribution);
             errorMessage.textContent = '';
             resultPanel.classList.remove('has-error');
         } catch (error) {
@@ -154,6 +195,7 @@
     }
 
     buildMatrix();
+    buildWinDistribution();
 
     calculateButton.addEventListener('click', calculate);
     equalButton.addEventListener('click', function () {

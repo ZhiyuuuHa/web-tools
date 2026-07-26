@@ -35,7 +35,7 @@
      * @param {number} winsRequired
      * @returns {number}
      */
-    function probabilityOfAtLeastWins(gameProbabilities, winsRequired) {
+    function winCountDistribution(gameProbabilities) {
         const distribution = new Array(gameProbabilities.length + 1).fill(0);
         distribution[0] = 1;
 
@@ -47,7 +47,11 @@
             }
         });
 
-        return distribution.slice(winsRequired).reduce(function (sum, value) {
+        return distribution;
+    }
+
+    function probabilityOfAtLeastWins(gameProbabilities, winsRequired) {
+        return winCountDistribution(gameProbabilities).slice(winsRequired).reduce(function (sum, value) {
             return sum + value;
         }, 0);
     }
@@ -79,7 +83,7 @@
      * 对每种匹配计算系列赛获胜概率再取平均，即为精确结果。
      *
      * @param {number[][]} matrix matrix[i][j] 为红队 i 战胜蓝队 j 的概率
-     * @returns {{winProbability: number, expectedWins: number, matchupCount: number, minMatchupProbability: number, maxMatchupProbability: number}}
+     * @returns {{winProbability: number, winDistribution: number[], expectedWins: number, matchupCount: number, minMatchupProbability: number, maxMatchupProbability: number}}
      */
     function calculateTeamWinProbability(matrix) {
         validateMatrix(matrix);
@@ -94,14 +98,21 @@
         let expectedWinsSum = 0;
         let minMatchupProbability = 1;
         let maxMatchupProbability = 0;
+        const winDistributionSum = new Array(teamSize + 1).fill(0);
 
         blueOrders.forEach(function (blueOrder) {
             const gameProbabilities = blueOrder.map(function (blueIndex, redIndex) {
                 return matrix[redIndex][blueIndex];
             });
-            const matchupProbability = probabilityOfAtLeastWins(gameProbabilities, winsRequired);
+            const matchupDistribution = winCountDistribution(gameProbabilities);
+            const matchupProbability = matchupDistribution.slice(winsRequired).reduce(function (sum, probability) {
+                return sum + probability;
+            }, 0);
 
             probabilitySum += matchupProbability;
+            matchupDistribution.forEach(function (probability, wins) {
+                winDistributionSum[wins] += probability;
+            });
             expectedWinsSum += gameProbabilities.reduce(function (sum, probability) {
                 return sum + probability;
             }, 0);
@@ -111,6 +122,9 @@
 
         return {
             winProbability: probabilitySum / blueOrders.length,
+            winDistribution: winDistributionSum.map(function (probability) {
+                return probability / blueOrders.length;
+            }),
             expectedWins: expectedWinsSum / blueOrders.length,
             matchupCount: blueOrders.length,
             minMatchupProbability: minMatchupProbability,
@@ -121,6 +135,7 @@
     return {
         calculateTeamWinProbability: calculateTeamWinProbability,
         probabilityOfAtLeastWins: probabilityOfAtLeastWins,
+        winCountDistribution: winCountDistribution,
         validateMatrix: validateMatrix
     };
 });

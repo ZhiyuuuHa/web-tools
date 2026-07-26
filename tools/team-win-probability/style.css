@@ -367,6 +367,70 @@ input {
     font-weight: 750;
 }
 
+.win-distribution-section {
+    grid-column: 1 / -1;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color);
+}
+
+.distribution-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.distribution-heading h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.distribution-heading span {
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+}
+
+.win-distribution {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px 18px;
+}
+
+.distribution-label {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+    font-size: 0.82rem;
+}
+
+.distribution-label span {
+    color: var(--text-secondary);
+}
+
+.distribution-track {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: var(--bg-color);
+}
+
+.distribution-bar {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--red-team);
+    transition: width 0.35s ease;
+}
+
+.distribution-item[data-wins="3"] .distribution-bar,
+.distribution-item[data-wins="4"] .distribution-bar,
+.distribution-item[data-wins="5"] .distribution-bar {
+    background: var(--success-color);
+}
+
 .method-card {
     margin-top: 24px;
     padding: 28px 30px;
@@ -463,6 +527,16 @@ input {
 
     .result-details {
         grid-template-columns: 1fr;
+    }
+
+    .win-distribution {
+        grid-template-columns: 1fr;
+    }
+
+    .distribution-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 2px;
     }
 
     .matrix-legend {
