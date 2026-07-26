@@ -2,7 +2,7 @@
     'use strict';
 
     const TEAM_SIZE = 5;
-    const DEFAULT_RED_NAMES = ['一号', '二号', '三号', '四号', '五号'];
+    const DEFAULT_RED_NAMES = ['1', '2', '3', '4', '5'];
     const DEFAULT_BLUE_NAMES = ['a', 'b', 'c', 'd', 'e'];
     const DEFAULT_PROBABILITY = 50;
 

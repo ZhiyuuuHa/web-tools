@@ -240,7 +240,10 @@ input {
 
 .member-name-input {
     padding: 7px 4px;
+    border-color: color-mix(in srgb, currentColor 24%, transparent);
+    background: color-mix(in srgb, var(--card-bg) 72%, transparent);
     font-weight: 700;
+    cursor: text;
 }
 
 .member-name-input[data-team="red"] {
@@ -253,7 +256,7 @@ input {
 
 .member-name-input:hover,
 .member-name-input:focus {
-    border-color: var(--border-color);
+    border-color: currentColor;
     background: var(--card-bg);
 }
 
