@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="电网刷题与背题：公共知识、计算机基础和冲刺题库，按账号和题库保存进度。">
+        <title>电网刷题 - Web Tools</title>
+        <link rel="stylesheet" href="../../assets/css/global.css">
+        <link rel="stylesheet" href="design-tokens.css">
+        <link rel="stylesheet" href="style.css">
+        <script src="../../assets/js/main.js"></script>
+        <script src="script.js" defer></script>
+    </head>
+    <body>
+        <a class="skip-link" href="#mainContent">跳到学习内容</a>
+        <header class="site-header">
+            <div class="site-header__brand">
+                <span class="site-brand"><svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 4h6l2 2 2-2h6v15h-6l-2 2-2-2H4Z"/><path d="M12 6v15M7 9h2M15 9h2M7 13h2M15 13h2"/></svg>电网刷题<span class="brand-caption">学习空间</span></span>
+            </div>
+            <div class="site-header__actions">
+                <div id="todaySummary" class="today-summary" title="全部题库 · 北京时间 · 按提交次数" hidden>
+                    <p class="today-summary__value" role="status"><span class="today-summary__label">今日<span class="today-summary__extra">已答</span></span> <strong id="todayCount">0</strong><span class="today-summary__unit"> 题</span></p>
+                    <p class="today-summary__note sr-only">全部题库 · 北京时间 · 按提交次数</p>
+                </div>
+                <span id="syncStatus" class="sync-label" role="status">记录自动保存</span>
+                <span id="accountName" class="site-header__title"></span>
+                <button id="logout" class="button button--quiet button--compact" type="button" hidden>退出</button>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="切换深色模式" aria-pressed="false"><svg class="theme-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><svg class="theme-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/></svg></button>
+            </div>
+        </header>
+        <main class="app-shell quiz-app" id="mainContent">
+            <div class="view-heading sr-only">
+                <h1 id="viewTitle">题库练习</h1>
+                <p id="viewDescription">从一道题开始，把知识慢慢变成把握。</p>
+            </div>
+            <p id="message" class="status-message" role="status" hidden></p>
+            <section id="connectionPanel" class="panel empty-state connection-panel" aria-labelledby="connectionTitle" hidden>
+                <span class="state-icon state-icon--offline" aria-hidden="true"></span>
+                <h2 id="connectionTitle">连接刷题服务器</h2>
+                <p>当前页面没有连上记录服务。请从服务器入口打开，或稍后重试。</p>
+                <div class="actions">
+                    <a class="button button--primary" href="http://110.42.223.114/tools/grid-quiz/index.html">在服务器上打开电网刷题 ↗</a>
+                    <button class="button button--quiet" id="reconnect" type="button">重新连接</button>
+                </div>
+            </section>
+            <section id="loginPanel" class="panel login-panel" aria-labelledby="loginTitle" hidden>
+                <p class="eyebrow">欢迎回来</p>
+                <h2 id="loginTitle">继续你的学习</h2>
+                <p class="login-panel__lead">每个账号拥有独立的进度、错题和答题记录。</p>
+                <form id="loginForm">
+                    <div class="field">
+                        <label class="form-label" for="username">账号</label>
+                        <input class="form-control" id="username" name="username" autocomplete="username" maxlength="40" required placeholder="输入你的账号">
+                    </div>
+                    <div class="field">
+                        <label class="form-label" for="password">密码</label>
+                        <input class="form-control" id="password" name="password" type="password" autocomplete="current-password" maxlength="100" required placeholder="输入密码">
+                    </div>
+                    <div class="actions login-actions">
+                        <button class="button button--primary" type="submit" id="login">登录</button>
+                        <button class="button button--quiet" type="submit" id="register" disabled title="注册功能已关闭">注册已关闭</button>
+                    </div>
+                    <p class="form-help">个人使用的简单账号密码，请使用专用密码。</p>
+                </form>
+            </section>
+            <div id="workspace" hidden>
+                <nav class="view-nav" aria-label="学习导航">
+                    <button type="button" data-view="practice" aria-current="page" aria-controls="practiceView">题库练习</button>
+                    <button type="button" data-view="wrong" aria-controls="wrongView">错题本 <span id="wrongNavCount" class="nav-count">0</span></button>
+                    <button type="button" data-view="stats" aria-controls="statsView">学习统计</button>
+                </nav>
+                <div class="study-layout">
+                    <details id="studySetup" class="study-setup" open>
+                        <summary><span class="study-setup__title">练习设置</span><span id="setupBankName" class="study-setup__bank"></span><span class="setup-hint" aria-hidden="true"></span></summary>
+                        <div class="study-setup__body">
+                            <section class="setup-section bank-panel">
+                                <label for="bankSelect" class="setup-section__title">当前题库</label>
+                                <select id="bankSelect" class="form-control" aria-describedby="bankDescription"></select>
+                                <p id="bankDescription" class="setup-note">每套题库分别保存进度、错题和答题记录。</p>
+                            </section>
+                            <section class="setup-section filter-panel" aria-labelledby="filterTitle">
+                                <h2 id="filterTitle" class="setup-section__title">练习范围</h2>
+                                <div class="filters">
+                                    <label id="subjectFilter" hidden><span class="form-label">科目</span><select id="subject" class="form-control"><option value="">全部科目</option></select></label>
+                                    <label><span class="form-label">章节</span><select id="chapter" class="form-control"><option value="">全部章节</option></select></label>
+                                    <label><span class="form-label">题型</span><select id="kind" class="form-control">
+                                            <option value="all">全部题型</option>
+                                            <option value="single">单选题</option>
+                                            <option value="multiple">多选题 · 全部</option>
+                                            <option value="multiple_partial">多选题 · 仅非全选</option>
+                                            <option value="multiple_all">多选题 · 仅全选</option>
+                                            <option value="judge">判断题 · 全部</option>
+                                            <option value="judge_true">判断题 · 仅答案为对</option>
+                                            <option value="judge_false">判断题 · 仅答案为错</option>
+                                        </select></label>
+                                </div>
+                                <p id="scopeCount" class="scope-count"></p>
+                            </section>
+                            <section class="setup-section mode-panel" aria-labelledby="modeTitle">
+                                <h2 id="modeTitle" class="setup-section__title">学习方式</h2>
+                                <label class="memorize-toggle">
+                                    <span class="memorize-toggle__text"><strong>背题模式</strong><small>显示答案与解析，不计入作答。</small></span>
+                                    <input id="memorizeMode" type="checkbox">
+                                </label>
+                                <div class="start-actions">
+                                    <button class="button button--primary" type="button" data-start="ordered">顺序刷题</button>
+                                    <button class="button button--secondary" type="button" data-start="random">打乱刷题</button>
+                                    <button class="button button--quiet" type="button" data-start="wrong" id="wrongStart">只刷错题</button>
+                                    <button class="button button--quiet" type="button" data-start="favorites" id="favoriteStart">只刷收藏（0）</button>
+                                    <button class="button button--quiet continue-button" type="button" id="continue" hidden>继续上次练习</button>
+                                </div>
+                            </section>
+                        </div>
+                    </details>
+                    <div class="study-content">
+                        <div id="practiceView" class="view-panel">
+                            <section id="practiceEmpty" class="panel practice-empty" aria-labelledby="practiceEmptyTitle">
+                                <p class="eyebrow">准备好，开始下一步</p>
+                                <h2 id="practiceEmptyTitle">今天，从这里开始。</h2>
+                                <p class="practice-empty__lead">选好题库和范围，按自己的节奏练习。每一次作答，都会为你留下记录。</p>
+                                <ol class="empty-steps">
+                                    <li><b>01</b><span>选择练习范围</span></li>
+                                    <li><b>02</b><span>刷题或背题</span></li>
+                                    <li><b>03</b><span>回顾错题，巩固知识</span></li>
+                                </ol>
+                                <button class="button button--secondary" type="button" id="openSetup">选择练习范围</button>
+                            </section>
+                            <section id="practice" class="panel practice-panel" aria-labelledby="questionText" hidden>
+                                <div class="question-top">
+                                    <span id="roundLabel" class="round-label"></span>
+                                    <div class="question-tools">
+                                        <button id="favoriteQuestion" class="tool-button favorite-button" type="button" aria-pressed="false">☆ 收藏本题</button>
+                                        <button id="roundProgress" class="tool-button question-map-trigger" type="button" aria-label="查看全部题号" aria-haspopup="dialog" aria-controls="questionMapDialog" title="查看全部题号"></button>
+                                    </div>
+                                </div>
+                                <progress id="progress" class="round-progress" max="1" value="0" aria-label="本轮答题进度"></progress>
+                                <div class="question-heading">
+                                    <p id="questionMeta" class="question-meta"></p>
+                                    <span id="answerState" class="answer-state" data-state="idle">○ 未作答</span>
+                                </div>
+                                <h2 id="questionText" class="question-text" tabindex="-1"></h2>
+                                <p id="multipleHelp" class="question-help" hidden>多选题：选齐全部正确选项才算答对。</p>
+                                <fieldset id="options" class="answer-options" aria-label="选择答案"><legend class="sr-only">选择答案</legend></fieldset>
+                                <p id="answerHint" class="answer-hint" role="status" hidden></p>
+                                <div id="feedback" class="feedback" role="status" hidden></div>
+                                <section id="explanation" class="question-explanation" aria-labelledby="explanationTitle" hidden><h3 id="explanationTitle">答案解析</h3><div id="explanationContent" class="rich-content"></div></section>
+                                <p id="sourcePage" class="question-source" hidden></p>
+                                <div id="questionActions" class="question-actions" role="group" aria-label="答题操作"><div class="actions">
+                                        <p id="swipeHint" class="swipe-hint">左滑下一题 · 右滑上一题</p>
+                                        <button id="previousQuestion" class="button button--quiet" type="button" hidden>← 上一题</button>
+                                        <button id="submitAnswer" class="button button--primary" type="button">提交答案</button>
+                                        <button id="nextQuestion" class="button button--quiet" type="button" hidden>下一题 →</button>
+                                    </div></div>
+                            </section>
+                            <section id="completion" class="panel completion-panel" aria-labelledby="completionTitle" hidden>
+                                <span class="completion-icon" aria-hidden="true">✓</span>
+                                <h2 id="completionTitle">这一轮，完成了</h2>
+                                <p id="completionText"></p>
+                                <div class="actions">
+                                    <button class="button button--primary" type="button" data-start="wrong">继续巩固错题</button>
+                                    <button class="button button--quiet" type="button" id="completionMap">查看题号</button>
+                                    <button class="button button--quiet" type="button" id="repeatMemory" hidden>再背一遍</button>
+                                    <button class="button button--quiet" type="button" id="backToFilters">重新选择练习</button>
+                                </div>
+                            </section>
+                        </div>
+                        <section id="wrongView" class="view-panel" aria-labelledby="wrongTitle" hidden>
+                            <div class="panel wrong-summary">
+                                <div class="wrong-summary__text">
+                                    <p class="eyebrow">回顾与巩固</p>
+                                    <h2 id="wrongTitle" tabindex="-1">把错题，变成会的题。</h2>
+                                    <p id="wrongScope" class="wrong-scope"></p>
+                                </div>
+                                <button type="button" class="button button--primary" data-start="wrong" id="reviewWrong">开始错题练习</button>
+                            </div>
+                            <p class="section-note">以最近一次作答为准，答对后自动移出。下列题目来自当前筛选范围。</p>
+                            <ol id="wrongList" class="wrong-list"></ol>
+                            <div class="list-pagination"><span id="wrongPageLabel" class="list-pagination__label" role="status"></span><div class="actions"><button id="wrongPrevious" class="button button--quiet" type="button">上一页</button><button id="wrongNext" class="button button--quiet" type="button">下一页</button></div></div>
+                        </section>
+                        <section id="statsView" class="view-panel" aria-labelledby="statsHeading" hidden>
+                            <div class="section-heading">
+                                <div><p class="eyebrow">每一步，都有记录</p><h2 id="statsHeading">学习概况</h2></div>
+                                <span class="section-heading__scope">当前题库 · 全部章节</span>
+                            </div>
+                            <div class="overview" role="group" aria-label="当前题库的刷题概况">
+                                <div class="panel stat"><span class="stat__label">题库总量</span><strong id="totalCount" class="stat__value">0</strong><small id="chapterCount" class="stat__note">道题</small></div>
+                                <div class="panel stat"><span class="stat__label">已刷题目</span><strong id="doneCount" class="stat__value">0</strong><small id="accuracy" class="stat__note">累计正确率 —</small></div>
+                                <div class="panel stat stat--danger"><span class="stat__label">当前错题</span><strong id="wrongCount" class="stat__value">0</strong><small class="stat__note">复习答对后移出错题本</small></div>
+                            </div>
+                            <section class="panel coverage-panel" aria-labelledby="coverageTitle">
+                                <div class="coverage-panel__head"><h3 id="coverageTitle" class="panel__title">题库完成度</h3><strong id="coverageText">0 / 0 题</strong></div>
+                                <progress id="coverageProgress" max="1" value="0" aria-label="当前题库已刷题目比例"></progress>
+                                <p class="panel__description">按已作答的不同题目计算；重复作答不重复增加完成度。</p>
+                            </section>
+                            <div class="details-grid">
+                                <section class="panel stats-table-panel" aria-labelledby="statsTitle">
+                                    <h3 id="statsTitle" class="panel__title">题型统计</h3><p class="panel__description" id="statsScope">全部章节；细分项包含在对应题型中。</p>
+                                    <div class="table-wrap"><table class="stats-table"><thead><tr><th scope="col">题型 / 答案</th><th scope="col">总量</th><th scope="col">已刷</th><th scope="col">错题</th><th scope="col">完成度</th></tr></thead><tbody id="typeStats"></tbody></table></div>
+                                </section>
+                                <section class="panel history-panel" aria-labelledby="historyTitle">
+                                    <h3 id="historyTitle" class="panel__title">最近答题</h3><p class="panel__description">保留每次作答，展示最近 100 条。</p>
+                                    <ol id="history" class="history-list" tabindex="0" aria-labelledby="historyTitle"></ol>
+                                </section>
+                            </div>
+                            <section class="panel records-panel" aria-labelledby="recordsTitle">
+                                <div class="records-panel__text">
+                                    <h3 id="recordsTitle" class="panel__title">记录管理</h3>
+                                    <p class="records-panel__source"><span class="records-panel__label">题库来源</span><span id="bankSource">筛选范围不影响已保存的记录。</span></p>
+                                    <p class="panel__description">清空只影响当前题库的答题记录、错题和练习进度；收藏、其他题库和其他账号的记录都会保留。</p>
+                                </div>
+                                <button class="button button--danger-quiet reset-button" type="button" id="reset">清空当前题库答题记录，重新刷题</button>
+                            </section>
+                        </section>
+                    </div>
+                </div>
+            </div>
+            <dialog id="questionMapDialog" class="panel question-map-dialog" aria-labelledby="questionMapTitle" aria-describedby="questionMapDescription">
+                <div class="question-map-header"><h2 id="questionMapTitle" class="panel__title">全部题号</h2><button id="closeQuestionMap" class="button button--quiet button--compact" type="button" aria-label="关闭题号列表">关闭</button></div>
+                <p id="questionMapDescription" class="panel__description">点击题号可跳转；按题库原题号排列，状态按当前账号最近一次作答标记。</p>
+                <div class="question-map-legend" role="group" aria-label="题目状态统计">
+                    <span class="question-status" data-status="unanswered">○ 未做 <strong id="mapUnanswered">0</strong></span>
+                    <span class="question-status" data-status="correct">✓ 正确 <strong id="mapCorrect">0</strong></span>
+                    <span class="question-status" data-status="wrong">× 错误 <strong id="mapWrong">0</strong></span>
+                    <span class="question-status question-status--current">描边为当前题</span>
+                </div>
+                <div id="questionMapGrid" class="question-map-grid" role="list" aria-label="本轮题号与作答状态"></div>
+            </dialog>
+            <dialog id="confirmDialog" class="panel confirm-dialog" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+                <h2 id="confirmTitle">确认操作</h2><p id="confirmText"></p><div class="actions"><button class="button button--quiet" id="cancelConfirm" type="button">取消</button><button class="button button--primary" id="acceptConfirm" type="button">确认</button></div>
+            </dialog>
+        </main>
+    </body>
+</html>

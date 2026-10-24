@@ -1,81 +1,104 @@
-/**
- * main.js - 全局通用脚本
- * 功能：
- * 1. 工具搜索过滤
- * 2. 夜间模式 (Dark Mode) 切换与状态记忆
- */
+(function () {
+    'use strict';
 
-document.addEventListener('DOMContentLoaded', function() {
+    const THEME_KEY = 'web-tools-theme';
+    const LEGACY_THEME_KEY = 'theme';
+    const DARK_THEME = 'dark';
+    const LIGHT_THEME = 'light';
 
-    // =========================================
-    // 1. 搜索功能 (Search Functionality)
-    // =========================================
+    function readStoredTheme() {
+        try {
+            const storedTheme = localStorage.getItem(THEME_KEY) || localStorage.getItem(LEGACY_THEME_KEY);
+            return storedTheme === DARK_THEME || storedTheme === LIGHT_THEME ? storedTheme : null;
+        } catch (error) {
+            return null;
+        }
+    }
 
-    // 获取搜索框元素
-    const searchInput = document.getElementById('toolSearch');
+    function getPreferredTheme() {
+        const storedTheme = readStoredTheme();
+        if (storedTheme) return storedTheme;
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? DARK_THEME
+            : LIGHT_THEME;
+    }
 
-    // 只有当页面上存在搜索框时才执行 (避免在工具详情页报错)
-    if (searchInput) {
-        // 获取所有工具卡片
-        const toolCards = document.querySelectorAll('.tool-card');
+    const initialTheme = getPreferredTheme();
+    document.documentElement.dataset.theme = initialTheme;
 
-        // 监听输入事件
-        searchInput.addEventListener('input', function(e) {
-            // 获取用户输入并转为小写，去除首尾空格
-            const searchText = e.target.value.toLowerCase().trim();
+    function writeStoredTheme(theme) {
+        try {
+            localStorage.setItem(THEME_KEY, theme);
+            localStorage.setItem(LEGACY_THEME_KEY, theme);
+        } catch (error) {
+            // The UI still works when storage is unavailable.
+        }
+    }
 
-            toolCards.forEach(card => {
-                // 获取每个卡片的标题和描述
-                const title = card.querySelector('h3').innerText.toLowerCase();
-                const desc = card.querySelector('p').innerText.toLowerCase();
+    function updateThemeButtons(theme) {
+        const isDark = theme === DARK_THEME;
+        document.querySelectorAll('[data-theme-toggle], #themeToggle').forEach(function (button) {
+            const icon = button.querySelector('[data-theme-icon], span');
+            button.setAttribute('aria-pressed', String(isDark));
+            button.setAttribute('aria-label', isDark ? '切换到浅色模式' : '切换到深色模式');
+            button.title = isDark ? '切换到浅色模式' : '切换到深色模式';
+            if (icon) icon.textContent = isDark ? '🌙' : '☀️';
+        });
+    }
 
-                // 检查是否包含搜索词
-                if (title.includes(searchText) || desc.includes(searchText)) {
-                    card.style.display = 'flex'; // 显示 (flex 保持布局)
-                } else {
-                    card.style.display = 'none'; // 隐藏
-                }
+    function applyTheme(theme, persist) {
+        document.documentElement.dataset.theme = theme;
+        document.body.classList.toggle('dark-mode', theme === DARK_THEME);
+        updateThemeButtons(theme);
+        if (persist) writeStoredTheme(theme);
+
+        document.dispatchEvent(new CustomEvent('webtools:themechange', {
+            detail: { theme: theme }
+        }));
+    }
+
+    function initializeTheme() {
+        applyTheme(initialTheme, false);
+        document.querySelectorAll('[data-theme-toggle], #themeToggle').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const nextTheme = document.documentElement.dataset.theme === DARK_THEME
+                    ? LIGHT_THEME
+                    : DARK_THEME;
+                applyTheme(nextTheme, true);
             });
         });
     }
 
-    // =========================================
-    // 2. 夜间模式 (Dark Mode Toggle)
-    // =========================================
+    function initializeToolSearch() {
+        const searchInput = document.querySelector('[data-tool-search], #toolSearch');
+        if (!searchInput) return;
 
-    const themeToggleBtn = document.getElementById('themeToggle');
-    const body = document.body;
-    // 获取按钮里的 span 图标元素 (如果按钮不存在则为 null)
-    const iconSpan = themeToggleBtn ? themeToggleBtn.querySelector('span') : null;
+        const cards = Array.from(document.querySelectorAll('[data-tool-card], .tool-card'));
+        const emptyState = document.querySelector('[data-search-empty]');
 
-    // --- A. 初始化检查 ---
-    // 从浏览器缓存 (localStorage) 中读取上次保存的主题
-    const savedTheme = localStorage.getItem('theme');
+        searchInput.addEventListener('input', function () {
+            const query = searchInput.value.toLocaleLowerCase('zh-CN').trim();
+            let visibleCount = 0;
 
-    // 如果之前保存的是 'dark'，则立即应用
-    if (savedTheme === 'dark') {
-        body.classList.add('dark-mode');
-        if (iconSpan) iconSpan.textContent = '🌙'; // 设置为月亮图标
-    }
+            cards.forEach(function (card) {
+                const searchText = (card.dataset.search || card.textContent || '').toLocaleLowerCase('zh-CN');
+                const matches = !query || searchText.includes(query);
+                card.hidden = !matches;
+                if (matches) visibleCount += 1;
+            });
 
-    // --- B. 点击切换事件 ---
-    if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', function() {
-            // 切换 body 的 class
-            body.classList.toggle('dark-mode');
-
-            // 判断当前是否处于暗黑模式
-            const isDark = body.classList.contains('dark-mode');
-
-            if (isDark) {
-                // 如果是暗黑模式：保存状态，切换图标
-                localStorage.setItem('theme', 'dark');
-                iconSpan.textContent = '🌙';
-            } else {
-                // 如果是亮色模式：保存状态，切换图标
-                localStorage.setItem('theme', 'light');
-                iconSpan.textContent = '🌞';
-            }
+            if (emptyState) emptyState.hidden = visibleCount !== 0;
         });
     }
-});
+
+    function initialize() {
+        initializeTheme();
+        initializeToolSearch();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialize, { once: true });
+    } else {
+        initialize();
+    }
+})();

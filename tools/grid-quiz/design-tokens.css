@@ -1,0 +1,272 @@
+/* Grid Quiz tokens: primitive → semantic → component.
+   Semantic aliases reuse the toolbox's shared names (--color-*, --radius-*, --shadow-*),
+   so the shared .button / .panel / .form-control pick up the quiz theme without new classes. */
+:root {
+    /* Primitive · light neutrals */
+    --quiz-gray-0: #ffffff;
+    --quiz-gray-25: #f6f8fb;
+    --quiz-gray-50: #f3f5f8;
+    --quiz-gray-100: #eef1f5;
+    --quiz-gray-200: #dfe4eb;
+    --quiz-gray-300: #c3cbd7;
+    --quiz-gray-500: #7c8799;
+    --quiz-gray-600: #626e83;
+    --quiz-gray-700: #526074;
+    --quiz-gray-900: #1b2433;
+    /* Primitive · dark neutrals */
+    --quiz-slate-50: #e6ebf2;
+    --quiz-slate-200: #a9b4c3;
+    --quiz-slate-300: #94a0b1;
+    --quiz-slate-400: #77839a;
+    --quiz-slate-600: #3e4858;
+    --quiz-slate-700: #2c3441;
+    --quiz-slate-800: #1f2631;
+    --quiz-slate-850: #1c2330;
+    --quiz-slate-900: #171d26;
+    --quiz-slate-950: #0f141b;
+    /* Primitive · hues (blue = primary, green = correct, red = wrong, amber = missed / favorite) */
+    --quiz-blue-50: #ebf1ff;
+    --quiz-blue-100: #c3d4fb;
+    --quiz-blue-200: #b3cbff;
+    --quiz-blue-300: #a9c4ff;
+    --quiz-blue-400: #8fb2ff;
+    --quiz-blue-600: #2a5bd7;
+    --quiz-blue-700: #2049b5;
+    --quiz-blue-800: #34508a;
+    --quiz-blue-900: #1c2a47;
+    --quiz-blue-950: #0b1220;
+    --quiz-green-50: #e7f5ec;
+    --quiz-green-200: #8ee0ae;
+    --quiz-green-300: #74d39b;
+    --quiz-green-600: #1d7a46;
+    --quiz-green-700: #17633a;
+    --quiz-green-900: #15301f;
+    --quiz-green-950: #0b1a12;
+    --quiz-red-50: #fdeeec;
+    --quiz-red-200: #ffb3a9;
+    --quiz-red-300: #ff9b8f;
+    --quiz-red-600: #c0392b;
+    --quiz-red-700: #a12f22;
+    --quiz-red-900: #3b1e1b;
+    --quiz-red-950: #1f0d0b;
+    --quiz-amber-50: #fff3d9;
+    --quiz-amber-200: #f6d58f;
+    --quiz-amber-300: #f0c36a;
+    --quiz-amber-600: #9a6200;
+    --quiz-amber-700: #7d4f00;
+    --quiz-amber-900: #33280f;
+    --quiz-amber-950: #1e1606;
+
+    /* Primitive · spacing (4px grid) */
+    --quiz-space-1: 4px;
+    --quiz-space-2: 8px;
+    --quiz-space-3: 12px;
+    --quiz-space-4: 16px;
+    --quiz-space-5: 20px;
+    --quiz-space-6: 24px;
+    --quiz-space-8: 32px;
+    --quiz-space-10: 40px;
+    --quiz-space-12: 48px;
+    --quiz-space-16: 64px;
+
+    /* Primitive · type scale, leading, weight */
+    --quiz-text-2xs: .75rem;
+    --quiz-text-xs: .8125rem;
+    --quiz-text-sm: .875rem;
+    --quiz-text-md: .9375rem;
+    --quiz-text-base: 1rem;
+    --quiz-text-lg: 1.125rem;
+    --quiz-text-xl: 1.25rem;
+    --quiz-text-2xl: 1.5rem;
+    --quiz-text-3xl: 2rem;
+    --quiz-leading-tight: 1.3;
+    --quiz-leading-snug: 1.45;
+    --quiz-leading-normal: 1.6;
+    --quiz-leading-relaxed: 1.7;
+    --quiz-leading-loose: 1.8;
+    --quiz-weight-regular: 400;
+    --quiz-weight-medium: 500;
+    --quiz-weight-semibold: 600;
+    --quiz-weight-bold: 700;
+
+    /* Primitive · shape, motion, layers */
+    --quiz-radius-xs: 4px;
+    --quiz-radius-sm: 8px;
+    --quiz-radius-md: 10px;
+    --quiz-radius-lg: 14px;
+    --quiz-radius-xl: 18px;
+    --quiz-radius-pill: 999px;
+    --quiz-duration-fast: 120ms;
+    --quiz-duration-base: 180ms;
+    --quiz-ease: cubic-bezier(.2, 0, 0, 1);
+    /* Requests shorter than this never flash every control to the disabled look. */
+    --quiz-busy-delay: 300ms;
+    --quiz-z-action-bar: 90;
+    --quiz-z-header: 100;
+}
+
+/* Semantic · light theme (shared toolbox names first, quiz-only roles after). */
+:root {
+    --color-bg: var(--quiz-gray-50);
+    --color-surface: var(--quiz-gray-0);
+    --color-surface-muted: var(--quiz-gray-100);
+    --color-text: var(--quiz-gray-900);
+    --color-text-muted: var(--quiz-gray-700);
+    --color-border: var(--quiz-gray-200);
+    --color-primary: var(--quiz-blue-600);
+    --color-primary-hover: var(--quiz-blue-700);
+    --color-primary-soft: var(--quiz-blue-50);
+    --color-success: var(--quiz-green-600);
+    --color-danger: var(--quiz-red-600);
+    --color-warning: var(--quiz-amber-600);
+    --color-info: var(--quiz-blue-600);
+    --color-header: var(--quiz-gray-0);
+    --radius-sm: var(--quiz-radius-sm);
+    --radius-md: var(--quiz-radius-md);
+    --radius-lg: var(--quiz-radius-lg);
+    --radius-pill: var(--quiz-radius-pill);
+    --shadow-sm: 0 1px 2px rgb(16 24 40 / .05);
+    --shadow-md: 0 4px 14px rgb(16 24 40 / .08);
+    --shadow-lg: 0 18px 48px rgb(16 24 40 / .18);
+    --quiz-shadow-bar: 0 -6px 16px rgb(16 24 40 / .06);
+    --page-width: 1180px;
+    --header-height: 64px;
+
+    --quiz-text-subtle: var(--quiz-gray-600);
+    --quiz-surface-hover: var(--quiz-gray-25);
+    --quiz-border-strong: var(--quiz-gray-300);
+    --quiz-control: var(--quiz-gray-500);
+    --quiz-on-primary: var(--quiz-gray-0);
+    --quiz-primary-strong: var(--quiz-blue-700);
+    --quiz-primary-soft-border: var(--quiz-blue-100);
+    --quiz-success-soft: var(--quiz-green-50);
+    --quiz-success-strong: var(--quiz-green-700);
+    --quiz-on-success: var(--quiz-gray-0);
+    --quiz-danger-soft: var(--quiz-red-50);
+    --quiz-danger-strong: var(--quiz-red-700);
+    --quiz-on-danger: var(--quiz-gray-0);
+    --quiz-warning-soft: var(--quiz-amber-50);
+    --quiz-warning-strong: var(--quiz-amber-700);
+    --quiz-on-warning: var(--quiz-gray-0);
+    --quiz-image-bg: var(--quiz-gray-0);
+    --quiz-scrim: rgb(15 20 27 / .48);
+}
+
+/* Semantic · dark theme (main.js sets both selectors). */
+html[data-theme="dark"],
+body.dark-mode {
+    --color-bg: var(--quiz-slate-950);
+    --color-surface: var(--quiz-slate-900);
+    --color-surface-muted: var(--quiz-slate-800);
+    --color-text: var(--quiz-slate-50);
+    --color-text-muted: var(--quiz-slate-200);
+    --color-border: var(--quiz-slate-700);
+    --color-primary: var(--quiz-blue-400);
+    --color-primary-hover: var(--quiz-blue-200);
+    --color-primary-soft: var(--quiz-blue-900);
+    --color-success: var(--quiz-green-300);
+    --color-danger: var(--quiz-red-300);
+    --color-warning: var(--quiz-amber-300);
+    --color-info: var(--quiz-blue-400);
+    --color-header: var(--quiz-slate-900);
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / .3);
+    --shadow-md: 0 6px 18px rgb(0 0 0 / .32);
+    --shadow-lg: 0 20px 56px rgb(0 0 0 / .5);
+    --quiz-shadow-bar: 0 -6px 18px rgb(0 0 0 / .32);
+
+    --quiz-text-subtle: var(--quiz-slate-300);
+    --quiz-surface-hover: var(--quiz-slate-850);
+    --quiz-border-strong: var(--quiz-slate-600);
+    --quiz-control: var(--quiz-slate-400);
+    --quiz-on-primary: var(--quiz-blue-950);
+    --quiz-primary-strong: var(--quiz-blue-300);
+    --quiz-primary-soft-border: var(--quiz-blue-800);
+    --quiz-success-soft: var(--quiz-green-900);
+    --quiz-success-strong: var(--quiz-green-200);
+    --quiz-on-success: var(--quiz-green-950);
+    --quiz-danger-soft: var(--quiz-red-900);
+    --quiz-danger-strong: var(--quiz-red-200);
+    --quiz-on-danger: var(--quiz-red-950);
+    --quiz-warning-soft: var(--quiz-amber-900);
+    --quiz-warning-strong: var(--quiz-amber-200);
+    --quiz-on-warning: var(--quiz-amber-950);
+    --quiz-scrim: rgb(0 0 0 / .62);
+}
+
+/* Component tokens live on body so they resolve against the active theme. */
+body {
+    --focus-ring: 0 0 0 3px color-mix(in srgb, var(--color-primary) 30%, transparent);
+    --quiz-control-height: 44px;
+    --quiz-control-height-sm: 36px;
+    --quiz-sidebar-width: 280px;
+    --quiz-content-max: 880px;
+    --quiz-layout-gap: var(--quiz-space-6);
+
+    --quiz-card-bg: var(--color-surface);
+    --quiz-card-border: var(--color-border);
+    --quiz-card-radius: var(--quiz-radius-lg);
+    --quiz-card-padding: var(--quiz-space-6);
+    --quiz-practice-padding: var(--quiz-space-8);
+
+    --quiz-question-size: var(--quiz-text-xl);
+    --quiz-question-leading: var(--quiz-leading-relaxed);
+    /* Medium, not bold: long stems stay comfortable to read; size carries the emphasis. */
+    --quiz-question-weight: var(--quiz-weight-medium);
+    --quiz-option-size: var(--quiz-text-base);
+    --quiz-option-leading: 1.65;
+    --quiz-option-min-height: 56px;
+    /* Vertical padding is derived from min-height and key size in style.css. */
+    --quiz-option-padding-x: var(--quiz-space-4);
+    --quiz-option-gap: var(--quiz-space-3);
+    --quiz-option-bg: var(--color-surface);
+    --quiz-option-border: var(--quiz-border-strong);
+    --quiz-option-hover-bg: var(--quiz-surface-hover);
+    --quiz-option-hover-border: var(--quiz-control);
+    --quiz-option-selected-bg: var(--color-primary-soft);
+    --quiz-option-selected-border: var(--color-primary);
+    --quiz-option-correct-bg: var(--quiz-success-soft);
+    --quiz-option-correct-border: var(--color-success);
+    --quiz-option-wrong-bg: var(--quiz-danger-soft);
+    --quiz-option-wrong-border: var(--color-danger);
+    --quiz-option-missed-bg: var(--quiz-warning-soft);
+    --quiz-option-missed-border: var(--color-warning);
+    --quiz-key-size: 28px;
+    /* Round key = single choice / true-false, square key = multiple choice. */
+    --quiz-key-radius-square: 6px;
+    --quiz-explanation-size: var(--quiz-text-base);
+    --quiz-explanation-leading: var(--quiz-leading-loose);
+
+    --quiz-action-bar-bg: var(--color-surface);
+    --quiz-action-bar-shadow: var(--quiz-shadow-bar);
+    --quiz-switch-off: var(--quiz-control);
+    --quiz-switch-on: var(--color-primary);
+    --quiz-switch-knob: var(--color-surface);
+}
+
+@media (max-width: 1023px) {
+    body {
+        --quiz-sidebar-width: 240px;
+        --quiz-layout-gap: var(--quiz-space-4);
+        --quiz-practice-padding: var(--quiz-space-6);
+    }
+}
+
+/* Phones (same 760px breakpoint as the swipe and auto-collapse logic in script.js). */
+@media (max-width: 760px) {
+    :root { --header-height: 56px; }
+    body {
+        --quiz-layout-gap: var(--quiz-space-3);
+        --quiz-card-padding: var(--quiz-space-4);
+        --quiz-practice-padding: var(--quiz-space-4);
+        --quiz-question-size: var(--quiz-text-lg);
+        --quiz-question-leading: 1.65;
+        --quiz-option-size: var(--quiz-text-md);
+        --quiz-option-leading: var(--quiz-leading-normal);
+        --quiz-option-min-height: 52px;
+        --quiz-option-padding-x: var(--quiz-space-3);
+        --quiz-option-gap: 10px;
+        --quiz-key-size: 26px;
+        --quiz-explanation-size: var(--quiz-text-md);
+        --quiz-explanation-leading: 1.75;
+    }
+}
